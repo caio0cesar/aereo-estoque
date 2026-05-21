@@ -174,9 +174,9 @@ function UndoToast({msg,onUndo,onDismiss}){
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
-  const STEP=22; // vertical offset per card in stack
+  const STEP=38;
   const isSingle=group.length===1;
-  const colHeight=isSingle?null:60+(group.length-1)*STEP+20;
+  const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
 
   const handleMouseLeave=()=>setHovered(-1);
 
@@ -189,8 +189,9 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
       const vi=getValidity(box.validade);
       const isHov=hovered===i;
       // Fan effect: when hovered, each card rises by its index * step; unhovered collapse
-      const fanOffset=hovered>=0?-i*STEP*1.4:0;
-      const baseOffset=isSingle?0:i*STEP;
+      const isTopCard=i===group.length-1;
+      const fanOffset=hovered>=0?(isTopCard?-10:-(i+1)*STEP*1.05):0;
+      const baseOffset=isSingle?0:(group.length-1-i)*STEP;
       return React.createElement("div",{
         key:box.id,
         draggable:true,
@@ -205,15 +206,15 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
           position:isSingle?"relative":"absolute",
           top:isSingle?undefined:baseOffset,
           left:0,width:"100%",
-          background:isHov?"rgba(25,75,95,0.98)":"rgba(10,50,68,0.92)",
-          border:`1px solid ${vi&&vi.days<=90?vi.color+"99":"rgba(29,209,161,0.28)"}`,
+          background:isHov?"rgba(25,80,100,0.99)":isTopCard?"rgba(10,55,72,0.97)":"rgba(8,44,60,0.95)",
+          border:"1px solid "+(vi&&vi.days<=90?vi.color+"bb":isHov?"rgba(29,209,161,0.65)":"rgba(29,209,161,0.38)"),
           borderRadius:10,padding:"7px 8px 7px",
           cursor:"grab",overflow:"hidden",
           opacity:draggingId===box.id?0.2:1,
-          transform:`translateY(${fanOffset}px)`,
-          transition:"transform 0.2s ease, background 0.15s, box-shadow 0.2s",
-          zIndex:isHov?100:group.length-i,
-          boxShadow:isHov?"0 8px 20px rgba(0,0,0,0.7)":"0 2px 8px rgba(0,0,0,0.5)",
+          transform:"translateY("+fanOffset+"px)",
+          transition:"transform 0.22s ease, background 0.15s, box-shadow 0.2s",
+          zIndex:isHov?100:i+1,
+          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isTopCard?"0 4px 12px rgba(0,0,0,0.6)":"0 2px 6px rgba(0,0,0,0.5)",
           userSelect:"none",
         }
       },
