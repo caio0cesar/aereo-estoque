@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-
+ 
 const genId = () => Math.random().toString(36).slice(2,9);
 const todayFull = () => { const d=new Date(); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
 const fmtDate = raw => { const d=raw.replace(/\D/g,"").slice(0,8); if(d.length<=2)return d; if(d.length<=4)return d.slice(0,2)+"/"+d.slice(2); return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4); };
 const calcVenc = (fab,m) => { const p=fab.split("/"); if(p.length!==3)return""; const d=new Date(+p[2],+p[1]-1,+p[0]); if(isNaN(d))return""; d.setMonth(d.getMonth()+Number(m)); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
 const parsePrice = v => parseFloat(String(v).replace(",","."))||0;
 const renumberFloors = floors => [...floors].sort((a,b)=>a.number-b.number).map((f,i)=>({...f,number:i+1}));
-
+ 
 function getValidity(dateStr) {
   if(!dateStr||dateStr.length<10) return null;
   const p=dateStr.split("/"); if(p.length!==3||p[2].length<4) return null;
@@ -18,7 +18,7 @@ function getValidity(dateStr) {
   if(days>30) return {days,color:"#ff9f43",label:"Urgente"};
   return {days,color:"#ff6b6b",label:days<0?"Vencido":"Crítico"};
 }
-
+ 
 function getAllExpiring(data) {
   const res=[];
   (data.corridors||[]).forEach(cor=>(cor.bays||[]).forEach(bay=>(bay.floors||[]).forEach(fl=>(fl.boxes||[]).forEach(box=>{
@@ -28,7 +28,7 @@ function getAllExpiring(data) {
   }))));
   return res.sort((a,b)=>a.v.days-b.v.days);
 }
-
+ 
 function findBySku(sku,corridors) {
   const res=[];
   (corridors||[]).forEach(cor=>(cor.bays||[]).forEach(bay=>(bay.floors||[]).forEach(fl=>(fl.boxes||[]).forEach(box=>{
@@ -36,7 +36,7 @@ function findBySku(sku,corridors) {
   }))));
   return res;
 }
-
+ 
 // Group boxes into stacks for display
 function getStackGroups(boxes) {
   const stacks={};
@@ -50,7 +50,7 @@ function getStackGroups(boxes) {
   });
   return order.map(key=>stacks[key].sort((a,b_)=>(a.stackOrder||0)-(b_.stackOrder||0)));
 }
-
+ 
 const INITIAL = {
   sectors:[
     {id:"sec1",name:"Tintas e Acabamentos",mascot:"🎨"},
@@ -90,9 +90,9 @@ const INITIAL = {
     {id:"c45",sectorId:"sec5",number:45,bays:[{id:"c45b1e",number:1,side:"Esquerdo",label:"Porcelanatos",floors:[{id:"f1j",number:1,boxes:[]}]}]},
   ]
 };
-
+ 
 const C={bg:"#071e26",border:"rgba(255,255,255,0.1)",accent:"#1dd1a1",accentDim:"rgba(29,209,161,0.13)",text:"#e4f5f0",muted:"#6aada0",dim:"#3f7068",danger:"#ff6b6b",modalBg:"#0b2533"};
-
+ 
 const css=`
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#071e26;color:#e4f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
@@ -115,10 +115,10 @@ button{cursor:pointer;}
 @keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .toast{animation:toastIn .2s ease;}
 `;
-
+ 
 async function persist(d){try{await window.storage.set("aereo-v7",JSON.stringify(d));}catch(e){}}
 async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
-
+ 
 // ─── PRIMITIVES ───────────────────────────────────────────────────────────────
 function Lbl({children,req}){return React.createElement("label",{style:{fontSize:12,color:C.muted,fontWeight:600,display:"block",marginBottom:4}},children,req&&React.createElement("span",{style:{color:C.accent}}," *"));}
 function Gap({h=12}){return React.createElement("div",{style:{height:h}});}
@@ -126,7 +126,7 @@ function Tag({children,color=C.accent,bg=C.accentDim}){return React.createElemen
 function NumInput({value,onChange,placeholder,readOnly,style={}}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(e.target.value.replace(/\D/g,"")),placeholder,readOnly,style});}
 function DateInput({value,onChange,placeholder="dd/mm/aaaa"}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(fmtDate(e.target.value)),placeholder});}
 function DecInput({value,onChange,placeholder}){return React.createElement("input",{value,inputMode:"decimal",onChange:e=>onChange(e.target.value.replace(/[^0-9.,]/g,"")),placeholder});}
-
+ 
 function Row({children}){
   const arr=Array.isArray(children)?children.filter(Boolean):[children];
   return React.createElement("div",{style:{display:"grid",gridTemplateColumns:`repeat(${arr.length},1fr)`,gap:10}},children);
@@ -134,7 +134,7 @@ function Row({children}){
 function SaveBtn({onClick,label="💾 Salvar"}){
   return React.createElement("button",{onClick,style:{background:C.accent,color:"#071e26",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,width:"100%",marginTop:8}},label);
 }
-
+ 
 function Modal({onClose,title,children,wide}){
   return React.createElement("div",{onClick:e=>{if(e.target===e.currentTarget)onClose();},style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}},
     React.createElement("div",{className:"su",style:{background:C.modalBg,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:wide?600:420,maxHeight:"92vh",overflowY:"auto"}},
@@ -147,7 +147,7 @@ function Modal({onClose,title,children,wide}){
     )
   );
 }
-
+ 
 function ConfirmModal({msg,onConfirm,onCancel}){
   return React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.87)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20}},
     React.createElement("div",{className:"su",style:{background:C.modalBg,border:"1px solid rgba(255,107,107,0.3)",borderRadius:16,padding:24,width:"100%",maxWidth:320,textAlign:"center"}},
@@ -161,7 +161,7 @@ function ConfirmModal({msg,onConfirm,onCancel}){
     )
   );
 }
-
+ 
 function UndoToast({msg,onUndo,onDismiss}){
   return React.createElement("div",{className:"toast",style:{position:"fixed",bottom:24,left:16,right:16,maxWidth:380,margin:"0 auto",background:"#1a3a4a",border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}},
     React.createElement("span",{style:{fontSize:16}},"🗑"),
@@ -170,35 +170,38 @@ function UndoToast({msg,onUndo,onDismiss}){
     React.createElement("button",{onClick:onDismiss,style:{background:"none",border:"none",color:C.dim,fontSize:16,padding:"0 2px",flexShrink:0}},"✕")
   );
 }
-
+ 
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
-  const STEP=38;
+  // Stack order: index 0 = bottom of pile, last index = top (front)
+  // We reverse so top card is rendered last (on top visually)
+  const STEP=34;
   const isSingle=group.length===1;
+  // reversed: index 0 is TOP card, last is BOTTOM
+  const reversed=[...group]; // index 0 = bottom of pile = front/priority
   const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
-
-  const handleMouseLeave=()=>setHovered(-1);
-
+ 
   return React.createElement("div",{
     style:{position:"relative",width:112,flexShrink:0,height:colHeight||undefined,marginRight:4},
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
-    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[0].id,floorId);}
+    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[group.length-1].id,floorId);}
   },
-    group.map((box,i)=>{
+    reversed.map((box,i)=>{
       const vi=getValidity(box.validade);
+      const isTop=i===0; // first in reversed = top of pile
       const isHov=hovered===i;
-      // Fan effect: when hovered, each card rises by its index * step; unhovered collapse
-      const isTopCard=i===group.length-1;
-      const fanOffset=hovered>=0?(isTopCard?-10:-(i+1)*STEP*1.05):0;
-      const baseOffset=isSingle?0:(group.length-1-i)*STEP;
+      // baseOffset: top card at 0, each card behind goes down by STEP
+      const baseOffset=isSingle?0:i*STEP;
+      // hover: only THIS card rises, others stay put
+      const liftOffset=isHov?-12:0;
       return React.createElement("div",{
         key:box.id,
         draggable:true,
         onDragStart:()=>{dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);},
         onDragEnd:()=>{dragRef.current=null;setDraggingId(null);},
         onMouseEnter:()=>setHovered(i),
-        onMouseLeave:handleMouseLeave,
+        onMouseLeave:()=>setHovered(-1),
         onTouchStart:()=>setHovered(i),
         onTouchEnd:()=>setTimeout(()=>setHovered(-1),1200),
         onClick:e=>{e.stopPropagation();onClickBox(box);},
@@ -206,44 +209,57 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
           position:isSingle?"relative":"absolute",
           top:isSingle?undefined:baseOffset,
           left:0,width:"100%",
-          background:isHov?"rgba(25,80,100,0.99)":isTopCard?"rgba(10,55,72,0.97)":"rgba(8,44,60,0.95)",
-          border:"1px solid "+(vi&&vi.days<=90?vi.color+"bb":isHov?"rgba(29,209,161,0.65)":"rgba(29,209,161,0.38)"),
-          borderRadius:10,padding:"7px 8px 7px",
+          background:isHov?"rgba(25,80,100,0.99)":isTop?"rgba(12,58,76,0.97)":"rgba(7,38,54,0.95)",
+          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isHov?"rgba(29,209,161,0.7)":isTop?"rgba(29,209,161,0.45)":"rgba(29,209,161,0.25)"),
+          borderRadius:10,padding:"7px 8px 6px",
           cursor:"grab",overflow:"hidden",
-          opacity:draggingId===box.id?0.2:1,
-          transform:"translateY("+fanOffset+"px)",
-          transition:"transform 0.22s ease, background 0.15s, box-shadow 0.2s",
-          zIndex:isHov?100:i+1,
-          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isTopCard?"0 4px 12px rgba(0,0,0,0.6)":"0 2px 6px rgba(0,0,0,0.5)",
+          opacity:1,
+          transform:"translateY("+liftOffset+"px)",
+          transition:"transform 0.18s ease, background 0.15s, box-shadow 0.18s",
+          zIndex:isHov?100:reversed.length-i,
+          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isTop?"0 4px 12px rgba(0,0,0,0.5)":"0 1px 4px rgba(0,0,0,0.4)",
           userSelect:"none",
         }
       },
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}},
           React.createElement("div",{style:{fontSize:36,opacity:0.05,lineHeight:1}},mascot)
         ),
-        React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:11,color:C.text,wordBreak:"break-all",marginBottom:2}},box.sku),
-        !isSingle&&React.createElement("div",{style:{position:"relative",borderTop:"1px dashed rgba(29,209,161,0.15)",marginBottom:3}}),
-        React.createElement("div",{style:{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontSize:7,color:C.dim}},"QTD."),
-            React.createElement("div",{style:{fontSize:15,fontWeight:800,color:C.accent,lineHeight:1}},box.qty)
-          ),
-          React.createElement("div",{style:{textAlign:"right"}},
-            box.updatedBy&&React.createElement("div",{style:{fontSize:7,color:C.dim}},box.updatedBy),
-            vi&&React.createElement("div",{style:{fontSize:7,color:vi.color,fontWeight:700}},"●")
+        // SKU always visible and prominent
+        React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:11,color:"#e4f5f0",wordBreak:"break-all",marginBottom:3}},box.sku),
+        isTop?(
+          // Top card: full layout with divider, qty, name, date
+          React.createElement(React.Fragment,null,
+            !isSingle&&React.createElement("div",{style:{borderTop:"1px dashed rgba(29,209,161,0.2)",marginBottom:4}}),
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},"QTD."),
+                React.createElement("div",{style:{fontSize:15,fontWeight:800,color:C.accent,lineHeight:1}},box.qty)
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                box.updatedBy&&React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},box.updatedBy),
+                box.date&&React.createElement("div",{style:{fontSize:7,color:"#4a8878"}},box.date),
+                vi&&React.createElement("div",{style:{fontSize:7,color:vi.color,fontWeight:700}},"●")
+              )
+            )
+          )
+        ):(
+          // Cards behind: compact — SKU already shown above, just qty on the right
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},"QTD."),
+            React.createElement("div",{style:{fontSize:12,fontWeight:800,color:C.accent}},box.qty)
           )
         ),
-        React.createElement("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:2,background:vi?vi.color+"55":"rgba(29,209,161,0.2)",borderRadius:"0 0 10px 10px"}})
+        React.createElement("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:2,background:vi?vi.color+"55":"rgba(29,209,161,0.18)",borderRadius:"0 0 10px 10px"}})
       );
     })
   );
 }
-
+ 
 // ─── FLOOR ROW: horizontal scroll with stacks ─────────────────────────────────
 function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
   const [dragOver,setDragOver]=useState(false);
   const groups=getStackGroups(floor.boxes);
-
+ 
   function dropOnFloor(){
     const dr=dragRef.current;
     if(!dr)return;
@@ -259,7 +275,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     onUpdateFloor(floor.id,newBoxes,dr.fromFloorId,dr.box.id);
     dragRef.current=null;setDragOver(false);
   }
-
+ 
   function dropOnStack(targetBoxId,fid){
     const dr=dragRef.current;
     if(!dr||dr.box.id===targetBoxId)return;
@@ -277,16 +293,40 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     onUpdateFloor(floor.id,dr.fromFloorId===floor.id?newBoxes:[...newBoxes,newBox],dr.fromFloorId,dr.box.id,{...newBox});
     dragRef.current=null;
   }
-
+ 
+  const scrollRef=useRef(null);
+  const touchStartX=useRef(0);
+  const touchScrollLeft=useRef(0);
+  const isDraggingScroll=useRef(false);
+ 
+  function onTouchStart(e){
+    if(dragRef.current)return; // don't hijack box drag
+    touchStartX.current=e.touches[0].clientX;
+    touchScrollLeft.current=scrollRef.current?.scrollLeft||0;
+    isDraggingScroll.current=false;
+  }
+  function onTouchMove(e){
+    if(dragRef.current)return;
+    const dx=touchStartX.current-e.touches[0].clientX;
+    if(Math.abs(dx)>6){isDraggingScroll.current=true;}
+    if(isDraggingScroll.current&&scrollRef.current){
+      scrollRef.current.scrollLeft=touchScrollLeft.current+dx;
+    }
+  }
+ 
   return React.createElement("div",{
+    ref:scrollRef,
     onDragOver:e=>{e.preventDefault();setDragOver(true);},
     onDragLeave:e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(false);},
     onDrop:e=>{e.preventDefault();dropOnFloor();},
+    onTouchStart,onTouchMove,
     className:dragOver?"floor-drop-active":"",
     style:{
       display:"flex",overflowX:"auto",gap:10,
       padding:"8px 4px 12px",minHeight:88,alignItems:"flex-end",
       transition:"border-color .15s,background .15s",
+      WebkitOverflowScrolling:"touch",
+      cursor:"grab",
     }
   },
     floor.boxes.length===0&&React.createElement("span",{style:{fontSize:11,color:C.dim,alignSelf:"center",paddingLeft:4}},"Vazio — toque em + para adicionar"),
@@ -300,7 +340,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     }))
   );
 }
-
+ 
 // ─── BOX DETAIL MODAL ─────────────────────────────────────────────────────────
 function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations}){
   const vi=getValidity(box.validade);
@@ -350,7 +390,7 @@ function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,all
     React.createElement("button",{onClick:onEdit,style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:11,fontWeight:700,fontSize:13,width:"100%"}},"✏️ Editar Caixa")
   );
 }
-
+ 
 // ─── BOX EDIT MODAL ───────────────────────────────────────────────────────────
 function BoxEditModal({modal,products,onSave,onClose,onDelete}){
   const isEdit=modal.type==="edit";
@@ -389,7 +429,7 @@ function BoxEditModal({modal,products,onSave,onClose,onDelete}){
     React.createElement(SaveBtn,{onClick:submit})
   );
 }
-
+ 
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
 function ProductModal({product,onSave,onClose,onDelete}){
   const isEdit=!!product;
@@ -427,7 +467,7 @@ function ProductModal({product,onSave,onClose,onDelete}){
     React.createElement(SaveBtn,{onClick:submit})
   );
 }
-
+ 
 // ─── PRODUCTS SCREEN ──────────────────────────────────────────────────────────
 function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete}){
   const [search,setSearch]=useState("");
@@ -470,7 +510,7 @@ function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirm
     })
   );
 }
-
+ 
 // ─── VALIDITY SCREEN ──────────────────────────────────────────────────────────
 function ValidityScreen({data,onBack,onNavigate}){
   const items=getAllExpiring(data);
@@ -503,7 +543,7 @@ function ValidityScreen({data,onBack,onNavigate}){
     )
   );
 }
-
+ 
 // ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
 function SearchOverlay({data,onClose,onNavigate}){
   const [query,setQuery]=useState("");
@@ -559,7 +599,7 @@ function SearchOverlay({data,onClose,onNavigate}){
     )
   );
 }
-
+ 
 // ─── BAY SCREEN ───────────────────────────────────────────────────────────────
 function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [modal,setModal]=useState(null);
@@ -568,9 +608,9 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
   const [draggingId,setDraggingId]=useState(null);
   const floors=[...bay.floors].sort((a,b)=>b.number-a.number);
   const totalBoxes=bay.floors.reduce((s,f)=>s+f.boxes.length,0);
-
+ 
   function updateBayFloors(newFloors){onUpdateBay({...bay,floors:renumberFloors(newFloors)});}
-
+ 
   // Called by FloorRow when a drop happens
   function handleFloorUpdate(toFloorId,newToBoxes,fromFloorId,draggedBoxId,stackedBox){
     const newFloors=bay.floors.map(f=>{
@@ -582,7 +622,7 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     });
     updateBayFloors(newFloors);
   }
-
+ 
   function handleSave(form){
     const box=modal.type==="edit"?{...modal.box,...form}:{...form,id:genId()};
     const newFloors=bay.floors.map(f=>{
@@ -593,13 +633,13 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     updateBayFloors(newFloors);
     setModal(null);setDetailModal(null);
   }
-
+ 
   function doDeleteBox(){
     onRegisterUndo("Caixa excluída");
     updateBayFloors(bay.floors.map(f=>f.id===modal.floorId?{...f,boxes:f.boxes.filter(b=>b.id!==modal.box.id)}:f));
     setModal(null);setDetailModal(null);
   }
-
+ 
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:100,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
     React.createElement("div",{style:{padding:"14px 14px 10px",display:"flex",alignItems:"center",gap:8,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
@@ -645,7 +685,7 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     })
   );
 }
-
+ 
 // ─── BAY MODAL ────────────────────────────────────────────────────────────────
 function BayModal({bay,side,onSave,onClose}){
   const [label,setLabel]=useState(bay?.label||"");
@@ -678,7 +718,7 @@ function SectorModal({sector,onSave,onClose}){
     React.createElement(SaveBtn,{onClick:()=>{if(!name.trim()){alert("Nome obrigatório!");return;}onSave({name:name.trim(),mascot});}})
   );
 }
-
+ 
 // ─── CORRIDOR SCREEN ──────────────────────────────────────────────────────────
 function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
@@ -740,7 +780,7 @@ function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,hig
     bayModal&&React.createElement(BayModal,{bay:bayModal.bay,side:bayModal.side,onSave:handleBaySave,onClose:()=>setBayModal(null)})
   );
 }
-
+ 
 // ─── SECTOR SCREEN ────────────────────────────────────────────────────────────
 function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
@@ -797,7 +837,7 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
     corridorModal&&React.createElement(CorridorModal,{corridor:corridorModal.corridor,onSave:handleCorridorSave,onClose:()=>setCorridorModal(null)})
   );
 }
-
+ 
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
 function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSearch,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo}){
   const [sectorModal,setSectorModal]=useState(null);
@@ -854,7 +894,7 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
     })
   );
 }
-
+ 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App(){
   const [data,setData]=useState(null);
@@ -864,14 +904,14 @@ export default function App(){
   const [undoState,setUndoState]=useState(null);
   const undoTimerRef=useRef(null);
   const dataRef=useRef(null);
-
+ 
   useEffect(()=>{loadPersisted().then(saved=>setData(saved||INITIAL));},[]);
   useEffect(()=>{if(data){persist(data);dataRef.current=data;}},[data]);
-
+ 
   const screen=screenStack[screenStack.length-1];
   const nav=s=>setScreenStack(st=>[...st,s]);
   const back=()=>setScreenStack(st=>st.length>1?st.slice(0,-1):st);
-
+ 
   function registerUndo(msg){
     const snapshot=dataRef.current;
     if(!snapshot)return;
@@ -881,7 +921,7 @@ export default function App(){
   }
   function doUndo(){if(undoState){setData(undoState.snapshot);setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}}
   function confirmDelete(msg,onConfirm){setConfirmState({msg,onConfirm});}
-
+ 
   function updateCorridor(updated){setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));}
   function addCorridor(cor){setData(d=>({...d,corridors:[...d.corridors,cor]}));}
   function deleteCorridor(id){setData(d=>({...d,corridors:d.corridors.filter(c=>c.id!==id)}));}
@@ -890,19 +930,19 @@ export default function App(){
   function addSector(s){setData(d=>({...d,sectors:[...(d.sectors||[]),s]}));}
   function editSector(s){setData(d=>({...d,sectors:(d.sectors||[]).map(x=>x.id===s.id?s:x)}));}
   function deleteSector(id){setData(d=>({...d,sectors:(d.sectors||[]).filter(s=>s.id!==id)}));}
-
+ 
   function handleNavigate({corridorId,bayId,boxId}){
     const cor=data.corridors.find(c=>c.id===corridorId);
     setScreenStack([{type:"home"},{type:"sector",sectorId:cor?.sectorId},{type:"bay",corridorId,bayId,highlightBoxId:boxId}]);
   }
-
+ 
   if(!data) return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:15}},"Carregando...");
-
+ 
   const sharedProps={onConfirmDelete:confirmDelete,onRegisterUndo:registerUndo};
-
+ 
   const getMascot=sectorId=>(data.sectors||[]).find(s=>s.id===sectorId)?.mascot||"📦";
   const getAllCors=()=>data.corridors.map(c=>({...c,mascot:getMascot(c.sectorId)}));
-
+ 
   return React.createElement(React.Fragment,null,
     React.createElement("style",null,css),
     screen.type==="home"&&React.createElement(HomeScreen,{data,onSelectSector:id=>nav({type:"sector",sectorId:id}),onOpenProducts:()=>nav({type:"products"}),onOpenValidity:()=>nav({type:"validity"}),onOpenSearch:()=>setShowSearch(true),onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,...sharedProps}),
@@ -925,5 +965,4 @@ export default function App(){
     showSearch&&React.createElement(SearchOverlay,{data,onClose:()=>setShowSearch(false),onNavigate:v=>{handleNavigate(v);setShowSearch(false);}}),
     confirmState&&React.createElement(ConfirmModal,{msg:confirmState.msg,onConfirm:()=>{confirmState.onConfirm();setConfirmState(null);},onCancel:()=>setConfirmState(null)}),
     undoState&&React.createElement(UndoToast,{msg:undoState.msg,onUndo:doUndo,onDismiss:()=>{setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}})
-  );
-}
+  
