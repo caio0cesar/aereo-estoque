@@ -325,13 +325,49 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
       return React.createElement("div",{
         key:box.id,
         draggable:true,
-        onDragStart:()=>{dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);},
-        onDragEnd:()=>{dragRef.current=null;setDraggingId(null);},
-        onMouseEnter:()=>setHovered(i),
-        onMouseLeave:()=>setHovered(-1),
-        onTouchStart:()=>setHovered(i),
-        onTouchEnd:()=>setTimeout(()=>setHovered(-1),1200),
-        onClick:e=>{e.stopPropagation();onClickBox(box);},
+        onDragStart:function(e){dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);},
+        onDragEnd:function(){dragRef.current=null;setDraggingId(null);},
+        onMouseEnter:function(){setHovered(i);},
+        onMouseLeave:function(){setHovered(-1);},
+        onTouchStart:function(e){
+          setHovered(i);
+          // start touch drag
+          var t=e.touches[0];
+          dragRef.current={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false};
+          setDraggingId(box.id);
+        },
+        onTouchMove:function(e){
+          var dr=dragRef.current;
+          if(!dr||!dr.box) return;
+          var t=e.touches[0];
+          var dx=Math.abs(t.clientX-(dr.touchStartX||0));
+          var dy=Math.abs(t.clientY-(dr.touchStartY||0));
+          if(dx>8||dy>8){ dr.isDragging=true; e.preventDefault(); }
+        },
+        onTouchEnd:function(e){
+          setHovered(-1);
+          var dr=dragRef.current;
+          if(!dr||!dr.isDragging){ dragRef.current=null; setDraggingId(null); return; }
+          // Find element under touch point
+          var t=e.changedTouches[0];
+          var el=document.elementFromPoint(t.clientX,t.clientY);
+          // Walk up to find slot
+          var slot=el;
+          var slotIdx=-1;
+          while(slot&&slot!==document.body){
+            if(slot.dataset&&slot.dataset.slotidx!=null){
+              slotIdx=parseInt(slot.dataset.slotidx);
+              break;
+            }
+            slot=slot.parentElement;
+          }
+          if(slotIdx>=0){
+            onDropOnStack(null,floorId,slotIdx);
+          } else {
+            dragRef.current=null;setDraggingId(null);
+          }
+        },
+        onClick:function(e){e.stopPropagation();onClickBox(box);},
         style:{
           position:"absolute",
           top:topOffset,left:0,
@@ -498,6 +534,7 @@ function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggi
       var isOver = dragOverSlot === slotIdx;
       return React.createElement("div", {
         key: slotIdx,
+        "data-slotidx": slotIdx,
         onDragOver: function(e){ e.preventDefault(); e.stopPropagation(); setDragOverSlot(slotIdx); },
         onDragLeave: function(){ setDragOverSlot(-1); },
         onDrop: function(e){ e.preventDefault(); e.stopPropagation(); dropOnSlot(slotIdx); },
@@ -522,7 +559,7 @@ function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggi
           draggingId: draggingId,
           setDraggingId: setDraggingId,
           floorId: floor.id,
-          onDropOnStack: function(targetBoxId) { dropOnSlot(slotIdx); }
+          onDropOnStack: function(targetBoxId, fid, touchSlotIdx) { dropOnSlot(touchSlotIdx != null ? touchSlotIdx : slotIdx); }
         }),
         !group && isOver && React.createElement("div", {
           style: {
