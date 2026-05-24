@@ -992,8 +992,11 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},"📦"),
     React.createElement("div",{style:{padding:"22px 16px 14px",borderBottom:`1px solid ${C.border}`}},
-      React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:2}},"📦 Estoque Aéreo"),
-      React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:14}},"Toque para explorar"),
+      React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:4}},"📦 Estoque Aéreo"),
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+        React.createElement("div",{style:{fontSize:12,color:C.muted}},profile?"Olá, "+(profile.name||"")+(profile.role==="admin"?" 👑":""):"Toque para explorar"),
+        onLogout&&React.createElement("button",{onClick:onLogout,style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11,cursor:"pointer"}},"Sair")
+      ),
       React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
         React.createElement("button",{onClick:onOpenProducts,style:{flex:1,background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},"🗂 Produtos"),
         React.createElement("button",{onClick:onOpenValidity,className:hasExpiring?"blink":"",style:{flex:1,background:hasExpiring?"rgba(255,107,107,0.12)":"rgba(255,255,255,0.06)",border:`1px solid ${hasExpiring?"rgba(255,107,107,0.3)":C.border}`,color:hasExpiring?C.danger:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},`${hasExpiring?"⚠️ ":"⏰ "}Validades${hasExpiring?` (${expiringItems.length})`:""}`)
