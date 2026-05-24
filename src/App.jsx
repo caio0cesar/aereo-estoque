@@ -1,12 +1,123 @@
 import React, { useState, useEffect, useRef } from "react";
- 
+
+// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
+
+async function sbFetch(path, options={}) {
+  const session = getSession();
+  const headers = {
+    "apikey": SUPA_KEY,
+    "Content-Type": "application/json",
+    ...(session ? {"Authorization": "Bearer " + session.access_token} : {"Authorization": "Bearer " + SUPA_KEY}),
+    ...options.headers,
+  };
+  const res = await fetch(SUPA_URL + path, {...options, headers});
+  if(!res.ok) { const err = await res.text(); throw new Error(err); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function getSession() {
+  try { const s = localStorage.getItem("sb_session"); return s ? JSON.parse(s) : null; } catch { return null; }
+}
+function saveSession(s) { try { localStorage.setItem("sb_session", s ? JSON.stringify(s) : ""); } catch {} }
+
+async function signIn(email, password) {
+  const res = await fetch(SUPA_URL + "/auth/v1/token?grant_type=password", {
+    method: "POST",
+    headers: {"apikey": SUPA_KEY, "Content-Type": "application/json"},
+    body: JSON.stringify({email, password}),
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error_description || data.msg || "Erro ao fazer login");
+  saveSession(data);
+  return data;
+}
+
+async function signOut() {
+  const session = getSession();
+  if(session) {
+    await fetch(SUPA_URL + "/auth/v1/logout", {
+      method: "POST",
+      headers: {"apikey": SUPA_KEY, "Authorization": "Bearer " + session.access_token},
+    }).catch(()=>{});
+  }
+  saveSession(null);
+}
+
+async function getProfile() {
+  const data = await sbFetch("/rest/v1/profiles?select=*&limit=1");
+  return data && data[0] ? data[0] : null;
+}
+
+// DB helpers
+const db = {
+  async sectors() { return sbFetch("/rest/v1/sectors?select=*&order=name"); },
+  async corridors() { return sbFetch("/rest/v1/corridors?select=*&order=number"); },
+  async bays() { return sbFetch("/rest/v1/bays?select=*&order=number"); },
+  async floors() { return sbFetch("/rest/v1/floors?select=*&order=number"); },
+  async boxes() { return sbFetch("/rest/v1/boxes?select=*"); },
+  async products() { return sbFetch("/rest/v1/products?select=*&order=sku"); },
+
+  async upsertSector(s) { return sbFetch("/rest/v1/sectors", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(s)}); },
+  async deleteSector(id) { return sbFetch("/rest/v1/sectors?id=eq."+id, {method:"DELETE"}); },
+  async upsertCorridor(c) { return sbFetch("/rest/v1/corridors", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(c)}); },
+  async deleteCorridor(id) { return sbFetch("/rest/v1/corridors?id=eq."+id, {method:"DELETE"}); },
+  async upsertBay(b) { return sbFetch("/rest/v1/bays", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(b)}); },
+  async deleteBay(id) { return sbFetch("/rest/v1/bays?id=eq."+id, {method:"DELETE"}); },
+  async upsertFloor(f) { return sbFetch("/rest/v1/floors", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(f)}); },
+  async deleteFloor(id) { return sbFetch("/rest/v1/floors?id=eq."+id, {method:"DELETE"}); },
+  async upsertBox(b) { return sbFetch("/rest/v1/boxes", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(b)}); },
+  async deleteBox(id) { return sbFetch("/rest/v1/boxes?id=eq."+id, {method:"DELETE"}); },
+  async upsertProduct(p) { return sbFetch("/rest/v1/products", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify(p)}); },
+  async deleteProduct(sku) { return sbFetch("/rest/v1/products?sku=eq."+sku, {method:"DELETE"}); },
+};
+
+// Load all data from Supabase and assemble into app structure
+async function loadFromSupabase() {
+  const [sectors, corridors, bays, floors, boxes, products] = await Promise.all([
+    db.sectors(), db.corridors(), db.bays(), db.floors(), db.boxes(), db.products(),
+  ]);
+  const productsMap = {};
+  (products||[]).forEach(p => {
+    productsMap[p.sku] = {
+      sku: p.sku, desc: p.description, familia: p.familia,
+      fornecedor: p.fornecedor, um: p.um, preco: p.preco ? String(p.preco) : "",
+      dtaInicio: p.dta_inicio||"", dtaFim: p.dta_fim||"",
+      ean: p.ean||"", situacao: p.situacao||"NN",
+    };
+  });
+  const floorsWithBoxes = (floors||[]).map(f => ({
+    id: f.id, number: f.number,
+    boxes: (boxes||[]).filter(b => b.floor_id === f.id).map(b => ({
+      id: b.id, sku: b.sku, qty: b.qty,
+      updatedBy: b.updated_by||"", date: b.date||"",
+      validade: b.validade||"", stackId: b.stack_id||null, stackOrder: b.stack_order||0,
+    })),
+  }));
+  const baysWithFloors = (bays||[]).map(b => ({
+    id: b.id, number: b.number, side: b.side, label: b.label,
+    floors: floorsWithBoxes.filter(f => (floors||[]).find(fl => fl.id === f.id && fl.bay_id === b.id)),
+  }));
+  const corridorsWithBays = (corridors||[]).map(c => ({
+    id: c.id, sectorId: c.sector_id, number: c.number,
+    bays: baysWithFloors.filter(b => (bays||[]).find(ba => ba.id === b.id && ba.corridor_id === c.id)),
+  }));
+  return {
+    sectors: (sectors||[]).map(s => ({id:s.id, name:s.name, mascot:s.mascot})),
+    corridors: corridorsWithBays,
+    products: productsMap,
+  };
+}
+
 const genId = () => Math.random().toString(36).slice(2,9);
 const todayFull = () => { const d=new Date(); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
 const fmtDate = raw => { const d=raw.replace(/\D/g,"").slice(0,8); if(d.length<=2)return d; if(d.length<=4)return d.slice(0,2)+"/"+d.slice(2); return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4); };
 const calcVenc = (fab,m) => { const p=fab.split("/"); if(p.length!==3)return""; const d=new Date(+p[2],+p[1]-1,+p[0]); if(isNaN(d))return""; d.setMonth(d.getMonth()+Number(m)); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
 const parsePrice = v => parseFloat(String(v).replace(",","."))||0;
 const renumberFloors = floors => [...floors].sort((a,b)=>a.number-b.number).map((f,i)=>({...f,number:i+1}));
- 
+
 function getValidity(dateStr) {
   if(!dateStr||dateStr.length<10) return null;
   const p=dateStr.split("/"); if(p.length!==3||p[2].length<4) return null;
@@ -18,7 +129,7 @@ function getValidity(dateStr) {
   if(days>30) return {days,color:"#ff9f43",label:"Urgente"};
   return {days,color:"#ff6b6b",label:days<0?"Vencido":"Crítico"};
 }
- 
+
 function getAllExpiring(data) {
   const res=[];
   (data.corridors||[]).forEach(cor=>(cor.bays||[]).forEach(bay=>(bay.floors||[]).forEach(fl=>(fl.boxes||[]).forEach(box=>{
@@ -28,7 +139,7 @@ function getAllExpiring(data) {
   }))));
   return res.sort((a,b)=>a.v.days-b.v.days);
 }
- 
+
 function findBySku(sku,corridors) {
   const res=[];
   (corridors||[]).forEach(cor=>(cor.bays||[]).forEach(bay=>(bay.floors||[]).forEach(fl=>(fl.boxes||[]).forEach(box=>{
@@ -36,7 +147,7 @@ function findBySku(sku,corridors) {
   }))));
   return res;
 }
- 
+
 // Group boxes into stacks for display
 function getStackGroups(boxes) {
   const stacks={};
@@ -50,7 +161,7 @@ function getStackGroups(boxes) {
   });
   return order.map(key=>stacks[key].sort((a,b_)=>(a.stackOrder||0)-(b_.stackOrder||0)));
 }
- 
+
 const INITIAL = {
   sectors:[
     {id:"sec1",name:"Tintas e Acabamentos",mascot:"🎨"},
@@ -90,9 +201,9 @@ const INITIAL = {
     {id:"c45",sectorId:"sec5",number:45,bays:[{id:"c45b1e",number:1,side:"Esquerdo",label:"Porcelanatos",floors:[{id:"f1j",number:1,boxes:[]}]}]},
   ]
 };
- 
+
 const C={bg:"#071e26",border:"rgba(255,255,255,0.1)",accent:"#1dd1a1",accentDim:"rgba(29,209,161,0.13)",text:"#e4f5f0",muted:"#6aada0",dim:"#3f7068",danger:"#ff6b6b",modalBg:"#0b2533"};
- 
+
 const css=`
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#071e26;color:#e4f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
@@ -115,10 +226,45 @@ button{cursor:pointer;}
 @keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .toast{animation:toastIn .2s ease;}
 `;
- 
-async function persist(d){try{await window.storage.set("aereo-v7",JSON.stringify(d));}catch(e){}}
-async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
- 
+
+async function persist(d){try{localStorage.setItem("aereo-v7", JSON.stringify(d));}catch(e){}}
+async function loadPersisted(){try{const r=localStorage.getItem("aereo-v7");return r?JSON.parse(r):null;}catch(e){return null;}}
+
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen({onLogin}){
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+
+  async function handleLogin(){
+    if(!email||!password){setError("Preencha email e senha.");return;}
+    setLoading(true);setError("");
+    try{
+      await signIn(email,password);
+      onLogin();
+    }catch(e){
+      setError(e.message||"Erro ao fazer login.");
+    }finally{setLoading(false);}
+  }
+
+  return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}},
+    React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📦"),
+    React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:4,color:C.text}},"Estoque Aéreo"),
+    React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:32}},"Faça login para continuar"),
+    React.createElement("div",{style:{width:"100%",maxWidth:340}},
+      error&&React.createElement("div",{style:{background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.3)",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger}},error),
+      React.createElement(Lbl,null,"Email"),
+      React.createElement("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),placeholder:"seu@email.com",style:{marginBottom:12}}),
+      React.createElement(Lbl,null,"Senha"),
+      React.createElement("input",{type:"password",value:password,onChange:e=>setPassword(e.target.value),placeholder:"••••••••",style:{marginBottom:20},onKeyDown:e=>{if(e.key==="Enter")handleLogin();}}),
+      React.createElement("button",{onClick:handleLogin,disabled:loading,style:{background:loading?"rgba(29,209,161,0.5)":C.accent,color:"#071e26",border:"none",borderRadius:10,padding:14,fontWeight:800,fontSize:15,width:"100%",cursor:loading?"not-allowed":"pointer"}},
+        loading?"Entrando...":"Entrar"
+      )
+    )
+  );
+}
+
 // ─── PRIMITIVES ───────────────────────────────────────────────────────────────
 function Lbl({children,req}){return React.createElement("label",{style:{fontSize:12,color:C.muted,fontWeight:600,display:"block",marginBottom:4}},children,req&&React.createElement("span",{style:{color:C.accent}}," *"));}
 function Gap({h=12}){return React.createElement("div",{style:{height:h}});}
@@ -126,7 +272,7 @@ function Tag({children,color=C.accent,bg=C.accentDim}){return React.createElemen
 function NumInput({value,onChange,placeholder,readOnly,style={}}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(e.target.value.replace(/\D/g,"")),placeholder,readOnly,style});}
 function DateInput({value,onChange,placeholder="dd/mm/aaaa"}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(fmtDate(e.target.value)),placeholder});}
 function DecInput({value,onChange,placeholder}){return React.createElement("input",{value,inputMode:"decimal",onChange:e=>onChange(e.target.value.replace(/[^0-9.,]/g,"")),placeholder});}
- 
+
 function Row({children}){
   const arr=Array.isArray(children)?children.filter(Boolean):[children];
   return React.createElement("div",{style:{display:"grid",gridTemplateColumns:`repeat(${arr.length},1fr)`,gap:10}},children);
@@ -134,7 +280,7 @@ function Row({children}){
 function SaveBtn({onClick,label="💾 Salvar"}){
   return React.createElement("button",{onClick,style:{background:C.accent,color:"#071e26",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,width:"100%",marginTop:8}},label);
 }
- 
+
 function Modal({onClose,title,children,wide}){
   return React.createElement("div",{onClick:e=>{if(e.target===e.currentTarget)onClose();},style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}},
     React.createElement("div",{className:"su",style:{background:C.modalBg,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:wide?600:420,maxHeight:"92vh",overflowY:"auto"}},
@@ -147,7 +293,7 @@ function Modal({onClose,title,children,wide}){
     )
   );
 }
- 
+
 function ConfirmModal({msg,onConfirm,onCancel}){
   return React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.87)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20}},
     React.createElement("div",{className:"su",style:{background:C.modalBg,border:"1px solid rgba(255,107,107,0.3)",borderRadius:16,padding:24,width:"100%",maxWidth:320,textAlign:"center"}},
@@ -161,7 +307,7 @@ function ConfirmModal({msg,onConfirm,onCancel}){
     )
   );
 }
- 
+
 function UndoToast({msg,onUndo,onDismiss}){
   return React.createElement("div",{className:"toast",style:{position:"fixed",bottom:24,left:16,right:16,maxWidth:380,margin:"0 auto",background:"#1a3a4a",border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}},
     React.createElement("span",{style:{fontSize:16}},"🗑"),
@@ -170,7 +316,7 @@ function UndoToast({msg,onUndo,onDismiss}){
     React.createElement("button",{onClick:onDismiss,style:{background:"none",border:"none",color:C.dim,fontSize:16,padding:"0 2px",flexShrink:0}},"✕")
   );
 }
- 
+
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
@@ -181,7 +327,7 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
   // reversed: index 0 is TOP card, last is BOTTOM
   const reversed=[...group]; // index 0 = bottom of pile = front/priority
   const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
- 
+
   return React.createElement("div",{
     style:{position:"relative",width:112,flexShrink:0,height:colHeight||undefined,marginRight:4},
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
@@ -254,12 +400,12 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
     })
   );
 }
- 
+
 // ─── FLOOR ROW: horizontal scroll with stacks ─────────────────────────────────
 function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
   const [dragOver,setDragOver]=useState(false);
   const groups=getStackGroups(floor.boxes);
- 
+
   function dropOnFloor(){
     const dr=dragRef.current;
     if(!dr)return;
@@ -275,7 +421,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     onUpdateFloor(floor.id,newBoxes,dr.fromFloorId,dr.box.id);
     dragRef.current=null;setDragOver(false);
   }
- 
+
   function dropOnStack(targetBoxId,fid){
     const dr=dragRef.current;
     if(!dr||dr.box.id===targetBoxId)return;
@@ -293,16 +439,16 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     onUpdateFloor(floor.id,dr.fromFloorId===floor.id?newBoxes:[...newBoxes,newBox],dr.fromFloorId,dr.box.id,{...newBox});
     dragRef.current=null;
   }
- 
+
   const scrollRef=useRef(null);
   const touchStartX=useRef(0);
   const touchScrollLeft=useRef(0);
   const isDraggingScroll=useRef(false);
- 
+
   function onTouchStart(e){
     if(dragRef.current)return; // don't hijack box drag
     touchStartX.current=e.touches[0].clientX;
-    touchScrollLeft.current=scrollRef.current?.scrollLeft||0;
+    touchScrollLeft.current=(scrollRef.current?scrollRef.current.scrollLeft:0)||0;
     isDraggingScroll.current=false;
   }
   function onTouchMove(e){
@@ -313,7 +459,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
       scrollRef.current.scrollLeft=touchScrollLeft.current+dx;
     }
   }
- 
+
   return React.createElement("div",{
     ref:scrollRef,
     onDragOver:e=>{e.preventDefault();setDragOver(true);},
@@ -340,24 +486,24 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     }))
   );
 }
- 
+
 // ─── BOX DETAIL MODAL ─────────────────────────────────────────────────────────
 function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations}){
   const vi=getValidity(box.validade);
   const otherLocs=(allLocations||[]).filter(l=>l.box.id!==box.id);
   const rows=[
-    {l:"Descrição",v:product?.desc},
-    {l:"Família",v:product?.familia},
-    {l:"Fornecedor",v:product?.fornecedor},
-    {l:"Unidade",v:product?.um},
-    {l:"Preço",v:product?.preco?`R$ ${parsePrice(product.preco).toFixed(2)}`:"—"},
-    {l:"EAN",v:product?.ean||"—"},
-    {l:"Situação",v:product?.situacao||"—"},
-    {l:"Enfrentamento",v:product?.dtaInicio&&product?.dtaFim?`${product.dtaInicio} → ${product.dtaFim}`:"—"},
+    {l:"Descrição",v:product&&product.desc},
+    {l:"Família",v:product&&product.familia},
+    {l:"Fornecedor",v:product&&product.fornecedor},
+    {l:"Unidade",v:product&&product.um},
+    {l:"Preço",v:product&&product.preco?`R$ ${parsePrice(product.preco).toFixed(2)}`:"—"},
+    {l:"EAN",v:product&&product.ean||"—"},
+    {l:"Situação",v:product&&product.situacao||"—"},
+    {l:"Enfrentamento",v:product&&product.dtaInicio&&product&&product.dtaFim?`${product.dtaInicio} → ${product.dtaFim}`:"—"},
   ];
   return React.createElement(Modal,{onClose,title:`📦 SKU ${box.sku}`},
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}},
-      [{icon:"📦",label:"Qtd.",val:String(box.qty),color:null},{icon:"📍",label:"Local",val:`C${corridor.number} B${bay.number} A${floorNumber}`,color:null},{icon:"📅",label:"Validade",val:box.validade||"—",color:vi?.color}]
+      [{icon:"📦",label:"Qtd.",val:String(box.qty),color:null},{icon:"📍",label:"Local",val:`C${corridor.number} B${bay.number} A${floorNumber}`,color:null},{icon:"📅",label:"Validade",val:box.validade||"—",color:vi&&vi.color}]
         .map((s,i)=>React.createElement("div",{key:i,style:{background:"rgba(255,255,255,0.05)",border:`1px solid ${s.color||C.border}`,borderRadius:10,padding:"10px 8px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:18,marginBottom:4}},s.icon),
           React.createElement("div",{style:{fontSize:9,color:C.muted,marginBottom:2}},s.label),
@@ -390,7 +536,7 @@ function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,all
     React.createElement("button",{onClick:onEdit,style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:11,fontWeight:700,fontSize:13,width:"100%"}},"✏️ Editar Caixa")
   );
 }
- 
+
 // ─── BOX EDIT MODAL ───────────────────────────────────────────────────────────
 function BoxEditModal({modal,products,onSave,onClose,onDelete}){
   const isEdit=modal.type==="edit";
@@ -429,7 +575,7 @@ function BoxEditModal({modal,products,onSave,onClose,onDelete}){
     React.createElement(SaveBtn,{onClick:submit})
   );
 }
- 
+
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
 function ProductModal({product,onSave,onClose,onDelete}){
   const isEdit=!!product;
@@ -467,12 +613,12 @@ function ProductModal({product,onSave,onClose,onDelete}){
     React.createElement(SaveBtn,{onClick:submit})
   );
 }
- 
+
 // ─── PRODUCTS SCREEN ──────────────────────────────────────────────────────────
 function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete}){
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
-  const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||p.desc?.toLowerCase().includes(search.toLowerCase())||p.fornecedor?.toLowerCase().includes(search.toLowerCase()));
+  const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||p.desc&&p.desc.toLowerCase().includes(search.toLowerCase())||p.fornecedor&&p.fornecedor.toLowerCase().includes(search.toLowerCase()));
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh"}},
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
@@ -510,7 +656,7 @@ function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirm
     })
   );
 }
- 
+
 // ─── VALIDITY SCREEN ──────────────────────────────────────────────────────────
 function ValidityScreen({data,onBack,onNavigate}){
   const items=getAllExpiring(data);
@@ -535,7 +681,7 @@ function ValidityScreen({data,onBack,onNavigate}){
             React.createElement(Tag,null,item.box.sku),
             React.createElement("span",{style:{fontSize:11,color:item.v.color,fontWeight:700}},`${item.v.label} · ${item.v.days<0?`Vencido há ${Math.abs(item.v.days)}d`:`${item.v.days} dias`}`)
           ),
-          item.product?.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},item.product.desc),
+          item.product&&product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},item.product.desc),
           React.createElement("div",{style:{fontSize:10,color:C.dim}},`📍 C${item.cor.number} · Bay ${item.bay.number} · Andar ${item.fl.number} · Qtd: ${item.box.qty}`),
           React.createElement("div",{style:{fontSize:10,color:item.v.color,marginTop:4}},`📅 ${item.box.validade} → Ir para o local ›`)
         )
@@ -543,19 +689,19 @@ function ValidityScreen({data,onBack,onNavigate}){
     )
   );
 }
- 
+
 // ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
 function SearchOverlay({data,onClose,onNavigate}){
   const [query,setQuery]=useState("");
   const inputRef=useRef(null);
-  useEffect(()=>{setTimeout(()=>inputRef.current?.focus(),100);},[]);
+  useEffect(()=>{setTimeout(()=>inputRef.current&&inputRef.current.focus(),100);},[]);
   const products=data.products||{};
   const allBoxSkus=[...new Set((data.corridors||[]).flatMap(c=>c.bays.flatMap(b=>b.floors.flatMap(f=>f.boxes.map(bx=>bx.sku)))))];
   const term=query.trim();
   const results=term.length>=2?(()=>{
     const matchedSkus=new Set();
     allBoxSkus.forEach(sku=>{if(sku.includes(term))matchedSkus.add(sku);});
-    Object.values(products).forEach(p=>{if(p.desc?.toLowerCase().includes(term.toLowerCase())||p.familia?.toLowerCase().includes(term.toLowerCase()))matchedSkus.add(p.sku);});
+    Object.values(products).forEach(p=>{if(p.desc&&p.desc.toLowerCase().includes(term.toLowerCase())||p.familia&&p.familia.toLowerCase().includes(term.toLowerCase()))matchedSkus.add(p.sku);});
     return[...matchedSkus].map(sku=>({sku,product:products[sku],locations:findBySku(sku,data.corridors)})).filter(r=>r.locations.length>0);
   })():[];
   const suggestions=term.length>=2&&term.length<7?allBoxSkus.filter(s=>s.startsWith(term)&&s!==term).slice(0,5):[];
@@ -585,8 +731,8 @@ function SearchOverlay({data,onClose,onNavigate}){
           React.createElement(Tag,null,r.sku),
           React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},`${r.locations.length} local(is)`)
         ),
-        r.product?.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},r.product.desc),
-        r.product?.fornecedor&&React.createElement("div",{style:{fontSize:11,color:C.muted,marginBottom:8}},r.product.fornecedor),
+        r.product&&product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},r.product.desc),
+        r.product&&product.fornecedor&&React.createElement("div",{style:{fontSize:11,color:C.muted,marginBottom:8}},r.product.fornecedor),
         r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>{onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id});onClose();},className:"ch",
           style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:4,textAlign:"left"}},
           React.createElement("div",null,
@@ -599,7 +745,7 @@ function SearchOverlay({data,onClose,onNavigate}){
     )
   );
 }
- 
+
 // ─── BAY SCREEN ───────────────────────────────────────────────────────────────
 function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [modal,setModal]=useState(null);
@@ -608,9 +754,9 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
   const [draggingId,setDraggingId]=useState(null);
   const floors=[...bay.floors].sort((a,b)=>b.number-a.number);
   const totalBoxes=bay.floors.reduce((s,f)=>s+f.boxes.length,0);
- 
+
   function updateBayFloors(newFloors){onUpdateBay({...bay,floors:renumberFloors(newFloors)});}
- 
+
   // Called by FloorRow when a drop happens
   function handleFloorUpdate(toFloorId,newToBoxes,fromFloorId,draggedBoxId,stackedBox){
     const newFloors=bay.floors.map(f=>{
@@ -622,7 +768,7 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     });
     updateBayFloors(newFloors);
   }
- 
+
   function handleSave(form){
     const box=modal.type==="edit"?{...modal.box,...form}:{...form,id:genId()};
     const newFloors=bay.floors.map(f=>{
@@ -633,13 +779,13 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     updateBayFloors(newFloors);
     setModal(null);setDetailModal(null);
   }
- 
+
   function doDeleteBox(){
     onRegisterUndo("Caixa excluída");
     updateBayFloors(bay.floors.map(f=>f.id===modal.floorId?{...f,boxes:f.boxes.filter(b=>b.id!==modal.box.id)}:f));
     setModal(null);setDetailModal(null);
   }
- 
+
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:100,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
     React.createElement("div",{style:{padding:"14px 14px 10px",display:"flex",alignItems:"center",gap:8,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
@@ -685,10 +831,10 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
     })
   );
 }
- 
+
 // ─── BAY MODAL ────────────────────────────────────────────────────────────────
 function BayModal({bay,side,onSave,onClose}){
-  const [label,setLabel]=useState(bay?.label||"");
+  const [label,setLabel]=useState(bay&&bay.label||"");
   return React.createElement(Modal,{onClose,title:`${bay?"✏️ Editar":"➕ Novo"} Bay — ${side}`},
     React.createElement(Lbl,{req:true},"Nome / Rótulo"),
     React.createElement("input",{value:label,onChange:e=>setLabel(e.target.value),autoFocus:true}),
@@ -696,7 +842,7 @@ function BayModal({bay,side,onSave,onClose}){
   );
 }
 function CorridorModal({corridor,onSave,onClose}){
-  const [number,setNumber]=useState(corridor?.number||"");
+  const [number,setNumber]=useState(corridor&&corridor.number||"");
   return React.createElement(Modal,{onClose,title:corridor?"✏️ Editar Corredor":"➕ Novo Corredor"},
     React.createElement(Lbl,{req:true},"Número do Corredor"),
     React.createElement(NumInput,{value:String(number),onChange:v=>setNumber(v),placeholder:"Ex: 41"}),
@@ -704,8 +850,8 @@ function CorridorModal({corridor,onSave,onClose}){
   );
 }
 function SectorModal({sector,onSave,onClose}){
-  const [name,setName]=useState(sector?.name||"");
-  const [mascot,setMascot]=useState(sector?.mascot||"📦");
+  const [name,setName]=useState(sector&&sector.name||"");
+  const [mascot,setMascot]=useState(sector&&sector.mascot||"📦");
   const emojis=["📦","🎨","🦆","🔧","⚡","🏠","🔩","💡","🪣","🧱","🪟","🔌","🛁","🚿","🪛","🔨","🪚","🧰","🏗️","🪴","🎯","🛠️","🧲","🪝"];
   return React.createElement(Modal,{onClose,title:sector?"✏️ Editar Setor":"➕ Novo Setor"},
     React.createElement(Lbl,{req:true},"Nome do Setor"),
@@ -718,7 +864,7 @@ function SectorModal({sector,onSave,onClose}){
     React.createElement(SaveBtn,{onClick:()=>{if(!name.trim()){alert("Nome obrigatório!");return;}onSave({name:name.trim(),mascot});}})
   );
 }
- 
+
 // ─── CORRIDOR SCREEN ──────────────────────────────────────────────────────────
 function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
@@ -780,7 +926,7 @@ function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,hig
     bayModal&&React.createElement(BayModal,{bay:bayModal.bay,side:bayModal.side,onSave:handleBaySave,onClose:()=>setBayModal(null)})
   );
 }
- 
+
 // ─── SECTOR SCREEN ────────────────────────────────────────────────────────────
 function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
@@ -837,9 +983,9 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
     corridorModal&&React.createElement(CorridorModal,{corridor:corridorModal.corridor,onSave:handleCorridorSave,onClose:()=>setCorridorModal(null)})
   );
 }
- 
+
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
-function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSearch,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo}){
+function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSearch,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,isAdmin,profile,onLogout}){
   const [sectorModal,setSectorModal]=useState(null);
   const expiringItems=getAllExpiring(data);
   const hasExpiring=expiringItems.length>0;
@@ -894,7 +1040,7 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
     })
   );
 }
- 
+
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App(){
   const [data,setData]=useState(null);
@@ -904,14 +1050,37 @@ export default function App(){
   const [undoState,setUndoState]=useState(null);
   const undoTimerRef=useRef(null);
   const dataRef=useRef(null);
- 
-  useEffect(()=>{loadPersisted().then(saved=>setData(saved||INITIAL));},[]);
+  const [session,setSession]=useState(getSession);
+  const [profile,setProfile]=useState(null);
+  const [loadingData,setLoadingData]=useState(false);
+  const isAdmin=profile&&profile.role==="admin";
+
+  // On login, load from Supabase; fallback to local
+  async function initData(){
+    setLoadingData(true);
+    try{
+      const remote=await loadFromSupabase();
+      setData(remote);
+    }catch(e){
+      console.warn("Supabase load failed, using local:", e);
+      const local=await loadPersisted();
+      setData(local||INITIAL);
+    }finally{setLoadingData(false);}
+  }
+
+  useEffect(()=>{
+    if(session){
+      getProfile().then(p=>setProfile(p)).catch(()=>{});
+      initData();
+    }
+  },[session]);
+
   useEffect(()=>{if(data){persist(data);dataRef.current=data;}},[data]);
- 
+
   const screen=screenStack[screenStack.length-1];
   const nav=s=>setScreenStack(st=>[...st,s]);
   const back=()=>setScreenStack(st=>st.length>1?st.slice(0,-1):st);
- 
+
   function registerUndo(msg){
     const snapshot=dataRef.current;
     if(!snapshot)return;
@@ -921,7 +1090,7 @@ export default function App(){
   }
   function doUndo(){if(undoState){setData(undoState.snapshot);setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}}
   function confirmDelete(msg,onConfirm){setConfirmState({msg,onConfirm});}
- 
+
   function updateCorridor(updated){setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));}
   function addCorridor(cor){setData(d=>({...d,corridors:[...d.corridors,cor]}));}
   function deleteCorridor(id){setData(d=>({...d,corridors:d.corridors.filter(c=>c.id!==id)}));}
@@ -930,22 +1099,26 @@ export default function App(){
   function addSector(s){setData(d=>({...d,sectors:[...(d.sectors||[]),s]}));}
   function editSector(s){setData(d=>({...d,sectors:(d.sectors||[]).map(x=>x.id===s.id?s:x)}));}
   function deleteSector(id){setData(d=>({...d,sectors:(d.sectors||[]).filter(s=>s.id!==id)}));}
- 
+
   function handleNavigate({corridorId,bayId,boxId}){
     const cor=data.corridors.find(c=>c.id===corridorId);
-    setScreenStack([{type:"home"},{type:"sector",sectorId:cor?.sectorId},{type:"bay",corridorId,bayId,highlightBoxId:boxId}]);
+    setScreenStack([{type:"home"},{type:"sector",sectorId:cor&&cor.sectorId},{type:"bay",corridorId,bayId,highlightBoxId:boxId}]);
   }
- 
-  if(!data) return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:15}},"Carregando...");
- 
-  const sharedProps={onConfirmDelete:confirmDelete,onRegisterUndo:registerUndo};
- 
-  const getMascot=sectorId=>(data.sectors||[]).find(s=>s.id===sectorId)?.mascot||"📦";
+
+  if(!session) return React.createElement(LoginScreen,{onLogin:()=>setSession(getSession())});
+  if(loadingData||!data) return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:15,gap:12}},
+    React.createElement("div",{style:{fontSize:32}},"📦"),
+    React.createElement("div",null,"Carregando dados...")
+  );
+
+  const sharedProps={onConfirmDelete:confirmDelete,onRegisterUndo:registerUndo,isAdmin};
+
+  const getMascot=sectorId=>{const s=(data.sectors||[]).find(s=>s.id===sectorId);return s?s.mascot:"📦";};
   const getAllCors=()=>data.corridors.map(c=>({...c,mascot:getMascot(c.sectorId)}));
- 
+
   return React.createElement(React.Fragment,null,
     React.createElement("style",null,css),
-    screen.type==="home"&&React.createElement(HomeScreen,{data,onSelectSector:id=>nav({type:"sector",sectorId:id}),onOpenProducts:()=>nav({type:"products"}),onOpenValidity:()=>nav({type:"validity"}),onOpenSearch:()=>setShowSearch(true),onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,...sharedProps}),
+    screen.type==="home"&&React.createElement(HomeScreen,{data,onSelectSector:id=>nav({type:"sector",sectorId:id}),onOpenProducts:()=>nav({type:"products"}),onOpenValidity:()=>nav({type:"validity"}),onOpenSearch:()=>setShowSearch(true),onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,profile,onLogout:async()=>{await signOut();setSession(null);setProfile(null);setData(null);setScreenStack([{type:"home"}]);},  ...sharedProps}),
     screen.type==="sector"&&(()=>{
       const sector=(data.sectors||[]).find(s=>s.id===screen.sectorId);
       if(!sector) return React.createElement("div",{style:{padding:20,color:C.danger}},"Setor não encontrado. ",React.createElement("button",{onClick:back,style:{color:C.accent,background:"none",border:"none"}},"Voltar"));
@@ -965,4 +1138,5 @@ export default function App(){
     showSearch&&React.createElement(SearchOverlay,{data,onClose:()=>setShowSearch(false),onNavigate:v=>{handleNavigate(v);setShowSearch(false);}}),
     confirmState&&React.createElement(ConfirmModal,{msg:confirmState.msg,onConfirm:()=>{confirmState.onConfirm();setConfirmState(null);},onCancel:()=>setConfirmState(null)}),
     undoState&&React.createElement(UndoToast,{msg:undoState.msg,onUndo:doUndo,onDismiss:()=>{setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}})
-  
+  );
+}
