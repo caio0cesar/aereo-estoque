@@ -227,8 +227,8 @@ button{cursor:pointer;}
 .toast{animation:toastIn .2s ease;}
 `;
 
-async function persist(d){try{localStorage.setItem("aereo-v7", JSON.stringify(d));}catch(e){}}
-async function loadPersisted(){try{const r=localStorage.getItem("aereo-v7");return r?JSON.parse(r):null;}catch(e){return null;}}
+async function persist(d){try{await window.storage.set("aereo-v7",JSON.stringify(d));}catch(e){}}
+async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
 
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 function LoginScreen({onLogin}){
@@ -320,12 +320,11 @@ function UndoToast({msg,onUndo,onDismiss}){
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
-  // Stack order: index 0 = bottom of pile, last index = top (front)
-  // We reverse so top card is rendered last (on top visually)
+  // index 0 = first added = BOTTOM of pile = shown BEHIND
+  // last index = last added = TOP of pile = shown IN FRONT
   const STEP=34;
   const isSingle=group.length===1;
-  // reversed: index 0 is TOP card, last is BOTTOM
-  const reversed=[...group]; // index 0 = bottom of pile = front/priority
+  // Render bottom-first so top card is painted last (on top)
   const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
 
   return React.createElement("div",{
@@ -333,13 +332,13 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
     onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[group.length-1].id,floorId);}
   },
-    reversed.map((box,i)=>{
+    group.map((box,i)=>{
       const vi=getValidity(box.validade);
-      const isTop=i===0; // first in reversed = top of pile
+      const isTop=i===group.length-1; // last = top of pile = front
       const isHov=hovered===i;
-      // baseOffset: top card at 0, each card behind goes down by STEP
-      const baseOffset=isSingle?0:i*STEP;
-      // hover: only THIS card rises, others stay put
+      // bottom card has highest baseOffset (furthest down), top card is at 0
+      const baseOffset=isSingle?0:(group.length-1-i)*STEP;
+      // hover: only THIS card rises
       const liftOffset=isHov?-12:0;
       return React.createElement("div",{
         key:box.id,
@@ -362,7 +361,7 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
           opacity:1,
           transform:"translateY("+liftOffset+"px)",
           transition:"transform 0.18s ease, background 0.15s, box-shadow 0.18s",
-          zIndex:isHov?100:reversed.length-i,
+          zIndex:isHov?100:i+1,
           boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isTop?"0 4px 12px rgba(0,0,0,0.5)":"0 1px 4px rgba(0,0,0,0.4)",
           userSelect:"none",
         }
