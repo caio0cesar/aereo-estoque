@@ -321,13 +321,14 @@ function UndoToast({msg,onUndo,onDismiss}){
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
   // group[0] = first added = bottom physically = FRONT (most visible)
-  // group[1], [2]... = added later = stacked on top physically = shown BEHIND
-  const PEEK=32; // how much of each back card peeks above the front card
+  // group[1], [2]... = stacked on top physically = shown BEHIND
+  const CARD_H=90;  // full card height
+  const PEEK=32;    // how much each back card peeks above the one in front
   const isSingle=group.length===1;
-  const colHeight=isSingle?null:90+(group.length-1)*PEEK;
+  const colHeight=isSingle?CARD_H:CARD_H+(group.length-1)*PEEK;
 
   return React.createElement("div",{
-    style:{position:"relative",width:116,flexShrink:0,height:colHeight||undefined,marginRight:6},
+    style:{position:"relative",width:116,flexShrink:0,height:colHeight,marginRight:6},
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
     onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current)onDropOnStack(group[0].id,floorId);}
   },
@@ -337,8 +338,9 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
       const vi=getValidity(box.validade);
       const isFront=i===0;
       const isHov=hovered===i;
-      // front card sits at bottom of container, back cards peek above it
-      const topOffset=isSingle?0:(group.length-1-i)*PEEK;
+      // front card at bottom, back cards stack above it
+      // card i sits at: (group.length-1-i)*PEEK from top
+      const topOffset=(group.length-1-i)*PEEK;
       const liftOffset=isHov?-10:0;
       return React.createElement("div",{
         key:box.id,
@@ -351,13 +353,13 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
         onTouchEnd:()=>setTimeout(()=>setHovered(-1),1200),
         onClick:e=>{e.stopPropagation();onClickBox(box);},
         style:{
-          position:isSingle?"relative":"absolute",
-          top:isSingle?undefined:topOffset,
-          left:0,width:"100%",
+          position:"absolute",
+          top:topOffset,left:0,
+          width:"100%",height:CARD_H,
           background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,78,0.98)":"rgba(8,42,58,0.96)",
           border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)"),
           borderRadius:10,
-          padding:isFront?"8px 9px":"6px 9px",
+          padding:"8px 9px",
           cursor:"grab",overflow:"hidden",opacity:1,
           transform:"translateY("+liftOffset+"px)",
           transition:"transform 0.18s ease, box-shadow 0.18s",
@@ -366,12 +368,10 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
           userSelect:"none",
         }
       },
-        // Mascot watermark
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}},
           React.createElement("div",{style:{fontSize:34,opacity:0.05,lineHeight:1}},mascot)
         ),
         isFront?(
-          // FRONT card: full layout like original box card
           React.createElement(React.Fragment,null,
             React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:12,color:"#e4f5f0",wordBreak:"break-all",marginBottom:6}},box.sku),
             React.createElement("div",{style:{borderTop:"1px dashed rgba(29,209,161,0.2)",marginBottom:6}}),
@@ -388,10 +388,10 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
             )
           )
         ):(
-          // BACK cards: compact strip — SKU left, QTD right
-          React.createElement("div",{style:{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            React.createElement("div",{style:{fontWeight:700,fontSize:11,color:"#c8e8e0",wordBreak:"break-all",flex:1}},box.sku),
-            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,flexShrink:0}},
+          // Back card: full size but only top portion visible — show SKU + QTD
+          React.createElement("div",{style:{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+            React.createElement("div",{style:{fontWeight:700,fontSize:11,color:"#c8e8e0",wordBreak:"break-all",flex:1,marginRight:6}},box.sku),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:3,flexShrink:0}},
               React.createElement("div",{style:{fontSize:8,color:"#5a9d90"}},"QTD"),
               React.createElement("div",{style:{fontSize:12,fontWeight:800,color:"#1dd1a1"}},box.qty)
             )
@@ -408,17 +408,16 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
   const [dragOver,setDragOver]=useState(false);
   const groups=getStackGroups(floor.boxes);
 
-  function dropOnFloor(){
+  function dropOnFloor(e){
     const dr=dragRef.current;
     if(!dr)return;
-    // unstacks the box and drops it standalone on this floor
+    // Drop on empty floor space = standalone, remove from any stack
     const box={...dr.box,stackId:null,stackOrder:0};
     let newBoxes;
     if(dr.fromFloorId===floor.id){
       newBoxes=floor.boxes.map(b=>b.id===box.id?box:b);
     } else {
       newBoxes=[...floor.boxes,box];
-      // caller handles removing from source floor
     }
     onUpdateFloor(floor.id,newBoxes,dr.fromFloorId,dr.box.id);
     dragRef.current=null;setDragOver(false);
@@ -466,7 +465,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     ref:scrollRef,
     onDragOver:e=>{e.preventDefault();setDragOver(true);},
     onDragLeave:e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(false);},
-    onDrop:e=>{e.preventDefault();dropOnFloor();},
+    onDrop:e=>{e.preventDefault();e.stopPropagation();dropOnFloor();},
     onTouchStart,onTouchMove,
     className:dragOver?"floor-drop-active":"",
     style:{
