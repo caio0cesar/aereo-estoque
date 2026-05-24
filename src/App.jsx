@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+// --- SUPABASE -----------------------------------------------------------------
 const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
 
-async function sbFetch(path, options={}) {
+async function sbFetch(path, options) {
+  options = options || {};
   const session = getSession();
   const headers = {
     "apikey": SUPA_KEY,
@@ -112,9 +113,9 @@ async function loadFromSupabase() {
 }
 
 const genId = () => Math.random().toString(36).slice(2,9);
-const todayFull = () => { const d=new Date(); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
+const todayFull = () => { const d=new Date(); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear(); };
 const fmtDate = raw => { const d=raw.replace(/\D/g,"").slice(0,8); if(d.length<=2)return d; if(d.length<=4)return d.slice(0,2)+"/"+d.slice(2); return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4); };
-const calcVenc = (fab,m) => { const p=fab.split("/"); if(p.length!==3)return""; const d=new Date(+p[2],+p[1]-1,+p[0]); if(isNaN(d))return""; d.setMonth(d.getMonth()+Number(m)); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`; };
+const calcVenc = (fab,m) => { const p=fab.split("/"); if(p.length!==3)return""; const d=new Date(+p[2],+p[1]-1,+p[0]); if(isNaN(d))return""; d.setMonth(d.getMonth()+Number(m)); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear(); };
 const parsePrice = v => parseFloat(String(v).replace(",","."))||0;
 const renumberFloors = floors => [...floors].sort((a,b)=>a.number-b.number).map((f,i)=>({...f,number:i+1}));
 
@@ -204,33 +205,12 @@ const INITIAL = {
 
 const C={bg:"#071e26",border:"rgba(255,255,255,0.1)",accent:"#1dd1a1",accentDim:"rgba(29,209,161,0.13)",text:"#e4f5f0",muted:"#6aada0",dim:"#3f7068",danger:"#ff6b6b",modalBg:"#0b2533"};
 
-const css=`
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#071e26;color:#e4f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
-input,select{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:#e4f5f0;font-size:14px;width:100%;outline:none;}
-input::placeholder{color:#3f7068;}select option{background:#0b2533;}
-input:focus,select:focus{border-color:#1dd1a1;}
-input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
-input[type=number]{-moz-appearance:textfield;}
-button{cursor:pointer;}
-::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:4px;}
-.ch:active{background:rgba(255,255,255,0.1)!important;}
-@media(hover:hover){.ch:hover{background:rgba(255,255,255,0.08)!important;}}
-.floor-drop-active{border-color:#1dd1a1!important;background:rgba(29,209,161,0.07)!important;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.fin{animation:fadeIn .15s ease;}
-@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-.su{animation:slideUp .2s ease;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-.blink{animation:blink 1.4s ease-in-out infinite;}
-@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.toast{animation:toastIn .2s ease;}
-`;
+const css="*{box-sizing:border-box;margin:0;padding:0;} body{background:#071e26;color:#e4f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;} input,select{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:#e4f5f0;font-size:14px;width:100%;outline:none;} input::placeholder{color:#3f7068;}select option{background:#0b2533;} input:focus,select:focus{border-color:#1dd1a1;} input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;} input[type=number]{-moz-appearance:textfield;} button{cursor:pointer;} ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:4px;} .ch:active{background:rgba(255,255,255,0.1)!important;} @media(hover:hover){.ch:hover{background:rgba(255,255,255,0.08)!important;}} .floor-drop-active{border-color:#1dd1a1!important;background:rgba(29,209,161,0.07)!important;} @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}} .fin{animation:fadeIn .15s ease;} @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}} .su{animation:slideUp .2s ease;} @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}} .blink{animation:blink 1.4s ease-in-out infinite;} @keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} .toast{animation:toastIn .2s ease;}";
 
 async function persist(d){try{await window.storage.set("aereo-v7",JSON.stringify(d));}catch(e){}}
 async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
 
-// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+// --- LOGIN SCREEN -------------------------------------------------------------
 function LoginScreen({onLogin}){
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
@@ -265,17 +245,17 @@ function LoginScreen({onLogin}){
   );
 }
 
-// ─── PRIMITIVES ───────────────────────────────────────────────────────────────
+// --- PRIMITIVES ---------------------------------------------------------------
 function Lbl({children,req}){return React.createElement("label",{style:{fontSize:12,color:C.muted,fontWeight:600,display:"block",marginBottom:4}},children,req&&React.createElement("span",{style:{color:C.accent}}," *"));}
 function Gap({h=12}){return React.createElement("div",{style:{height:h}});}
 function Tag({children,color=C.accent,bg=C.accentDim}){return React.createElement("span",{style:{background:bg,color,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}},children);}
-function NumInput({value,onChange,placeholder,readOnly,style={}}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(e.target.value.replace(/\D/g,"")),placeholder,readOnly,style});}
+function NumInput({value,onChange,placeholder,readOnly,style}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(e.target.value.replace(/\D/g,"")),placeholder,readOnly,style});}
 function DateInput({value,onChange,placeholder="dd/mm/aaaa"}){return React.createElement("input",{value,inputMode:"numeric",onChange:e=>onChange(fmtDate(e.target.value)),placeholder});}
 function DecInput({value,onChange,placeholder}){return React.createElement("input",{value,inputMode:"decimal",onChange:e=>onChange(e.target.value.replace(/[^0-9.,]/g,"")),placeholder});}
 
 function Row({children}){
   const arr=Array.isArray(children)?children.filter(Boolean):[children];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:`repeat(${arr.length},1fr)`,gap:10}},children);
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat("+arr.length+",1fr)",gap:10}},children);
 }
 function SaveBtn({onClick,label="💾 Salvar"}){
   return React.createElement("button",{onClick,style:{background:C.accent,color:"#071e26",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,width:"100%",marginTop:8}},label);
@@ -283,11 +263,11 @@ function SaveBtn({onClick,label="💾 Salvar"}){
 
 function Modal({onClose,title,children,wide}){
   return React.createElement("div",{onClick:e=>{if(e.target===e.currentTarget)onClose();},style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}},
-    React.createElement("div",{className:"su",style:{background:C.modalBg,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:wide?600:420,maxHeight:"92vh",overflowY:"auto"}},
+    React.createElement("div",{className:"su",style:{background:C.modalBg,border:"1px solid "+C.border,borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:wide?600:420,maxHeight:"92vh",overflowY:"auto"}},
       React.createElement("div",{style:{width:36,height:4,background:"rgba(255,255,255,0.15)",borderRadius:2,margin:"0 auto 16px"}}),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
         React.createElement("span",{style:{fontWeight:700,fontSize:16}},title),
-        React.createElement("button",{onClick:onClose,style:{background:"rgba(255,255,255,0.07)",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:13}},"✕")
+        React.createElement("button",{onClick:onClose,style:{background:"rgba(255,255,255,0.07)",border:"1px solid "+C.border,color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:13}},"✕")
       ),
       children
     )
@@ -301,7 +281,7 @@ function ConfirmModal({msg,onConfirm,onCancel}){
       React.createElement("div",{style:{fontSize:15,fontWeight:600,marginBottom:6,color:C.text}},msg),
       React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:20}},"Você poderá desfazer nos próximos 5 segundos."),
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
-        React.createElement("button",{onClick:onCancel,style:{background:"rgba(255,255,255,0.08)",border:`1px solid ${C.border}`,color:C.muted,borderRadius:10,padding:11,fontWeight:600,fontSize:14}},"Cancelar"),
+        React.createElement("button",{onClick:onCancel,style:{background:"rgba(255,255,255,0.08)",border:"1px solid "+C.border,color:C.muted,borderRadius:10,padding:11,fontWeight:600,fontSize:14}},"Cancelar"),
         React.createElement("button",{onClick:onConfirm,style:{background:"rgba(255,107,107,0.15)",border:"1px solid rgba(255,107,107,0.3)",color:C.danger,borderRadius:10,padding:11,fontWeight:700,fontSize:14}},"Excluir")
       )
     )
@@ -309,7 +289,7 @@ function ConfirmModal({msg,onConfirm,onCancel}){
 }
 
 function UndoToast({msg,onUndo,onDismiss}){
-  return React.createElement("div",{className:"toast",style:{position:"fixed",bottom:24,left:16,right:16,maxWidth:380,margin:"0 auto",background:"#1a3a4a",border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}},
+  return React.createElement("div",{className:"toast",style:{position:"fixed",bottom:24,left:16,right:16,maxWidth:380,margin:"0 auto",background:"#1a3a4a",border:"1px solid "+C.border,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}},
     React.createElement("span",{style:{fontSize:16}},"🗑"),
     React.createElement("span",{style:{flex:1,fontSize:13,color:C.text}},msg),
     React.createElement("button",{onClick:onUndo,style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.3)",color:C.accent,borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:12,flexShrink:0}},"Desfazer"),
@@ -317,7 +297,7 @@ function UndoToast({msg,onUndo,onDismiss}){
   );
 }
 
-// ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
+// --- STACK COLUMN: displays a pile of boxes with fan-on-hover effect ----------
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
   // group[0] = first added = bottom physically = FRONT (most visible)
@@ -388,7 +368,7 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
             )
           )
         ):(
-          // Back card: full size but only top portion visible — show SKU + QTD
+          // Back card: full size but only top portion visible - show SKU + QTD
           React.createElement("div",{style:{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
             React.createElement("div",{style:{fontWeight:700,fontSize:11,color:"#c8e8e0",wordBreak:"break-all",flex:1,marginRight:6}},box.sku),
             React.createElement("div",{style:{display:"flex",alignItems:"center",gap:3,flexShrink:0}},
@@ -403,7 +383,7 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
   );
 }
 
-// ─── FLOOR ROW: horizontal scroll with stacks ─────────────────────────────────
+// --- FLOOR ROW: horizontal scroll with stacks ---------------------------------
 function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
   const [dragOver,setDragOver]=useState(false);
   const groups=getStackGroups(floor.boxes);
@@ -461,11 +441,10 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
     }
   }
 
+  const [dropZoneOver,setDropZoneOver]=useState(false);
+
   return React.createElement("div",{
     ref:scrollRef,
-    onDragOver:e=>{e.preventDefault();setDragOver(true);},
-    onDragLeave:e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(false);},
-    onDrop:e=>{e.preventDefault();e.stopPropagation();dropOnFloor();},
     onTouchStart,onTouchMove,
     className:dragOver?"floor-drop-active":"",
     style:{
@@ -476,7 +455,7 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
       cursor:"grab",
     }
   },
-    floor.boxes.length===0&&React.createElement("span",{style:{fontSize:11,color:C.dim,alignSelf:"center",paddingLeft:4}},"Vazio — toque em + para adicionar"),
+    floor.boxes.length===0&&React.createElement("span",{style:{fontSize:11,color:C.dim,alignSelf:"center",paddingLeft:4}},"Vazio - toque em + para adicionar"),
     groups.map((group,gi)=>React.createElement(StackColumn,{
       key:group[0].id+gi,
       group,mascot,products,
@@ -484,11 +463,26 @@ function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,drag
       dragRef,draggingId,setDraggingId,
       floorId:floor.id,
       onDropOnStack:dropOnStack,
-    }))
+    })),
+    // Invisible drop zone at end - drag here to place box standalone
+    React.createElement("div",{
+      onDragOver:e=>{e.preventDefault();e.stopPropagation();setDropZoneOver(true);setDragOver(false);},
+      onDragLeave:()=>setDropZoneOver(false),
+      onDrop:e=>{e.preventDefault();e.stopPropagation();setDropZoneOver(false);dropOnFloor();},
+      style:{
+        flexShrink:0,width:dropZoneOver?90:40,minHeight:88,
+        border:dropZoneOver?"2px dashed #1dd1a1":"2px dashed rgba(255,255,255,0.08)",
+        borderRadius:10,
+        background:dropZoneOver?"rgba(29,209,161,0.08)":"transparent",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        transition:"all 0.15s",
+        alignSelf:"stretch",
+      }
+    },dropZoneOver&&React.createElement("span",{style:{fontSize:10,color:"#1dd1a1",fontWeight:600}},"Soltar aqui"))
   );
 }
 
-// ─── BOX DETAIL MODAL ─────────────────────────────────────────────────────────
+// --- BOX DETAIL MODAL ---------------------------------------------------------
 function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations}){
   const vi=getValidity(box.validade);
   const otherLocs=(allLocations||[]).filter(l=>l.box.id!==box.id);
@@ -497,37 +491,37 @@ function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,all
     {l:"Família",v:product&&product.familia},
     {l:"Fornecedor",v:product&&product.fornecedor},
     {l:"Unidade",v:product&&product.um},
-    {l:"Preço",v:product&&product.preco?`R$ ${parsePrice(product.preco).toFixed(2)}`:"—"},
-    {l:"EAN",v:product&&product.ean||"—"},
-    {l:"Situação",v:product&&product.situacao||"—"},
-    {l:"Enfrentamento",v:product&&product.dtaInicio&&product&&product.dtaFim?`${product.dtaInicio} → ${product.dtaFim}`:"—"},
+    {l:"Preço",v:product&&product.preco?"R$ "+parsePrice(product.preco).toFixed(2):"-"},
+    {l:"EAN",v:product&&product.ean||"-"},
+    {l:"Situação",v:product&&product.situacao||"-"},
+    {l:"Enfrentamento",v:product&&product.dtaInicio&&product&&product.dtaFim?product.dtaInicio+" → "+product.dtaFim:"-"},
   ];
-  return React.createElement(Modal,{onClose,title:`📦 SKU ${box.sku}`},
+  return React.createElement(Modal,{onClose,title:"📦 SKU "+box.sku},
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}},
-      [{icon:"📦",label:"Qtd.",val:String(box.qty),color:null},{icon:"📍",label:"Local",val:`C${corridor.number} B${bay.number} A${floorNumber}`,color:null},{icon:"📅",label:"Validade",val:box.validade||"—",color:vi&&vi.color}]
-        .map((s,i)=>React.createElement("div",{key:i,style:{background:"rgba(255,255,255,0.05)",border:`1px solid ${s.color||C.border}`,borderRadius:10,padding:"10px 8px",textAlign:"center"}},
+      [{icon:"📦",label:"Qtd.",val:String(box.qty),color:null},{icon:"📍",label:"Local",val:"C"+corridor.number+" B"+bay.number+" A"+floorNumber,color:null},{icon:"📅",label:"Validade",val:box.validade||"-",color:vi&&vi.color}]
+        .map((s,i)=>React.createElement("div",{key:i,style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+s.color||C.border,borderRadius:10,padding:"10px 8px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:18,marginBottom:4}},s.icon),
           React.createElement("div",{style:{fontSize:9,color:C.muted,marginBottom:2}},s.label),
           React.createElement("div",{style:{fontSize:11,fontWeight:700,color:s.color||C.text,wordBreak:"break-all"}},s.val)
         ))
     ),
-    vi&&vi.days<=90&&React.createElement("div",{style:{background:vi.color+"15",border:`1px solid ${vi.color}44`,borderRadius:10,padding:"8px 12px",marginBottom:12,display:"flex",alignItems:"center",gap:8}},
+    vi&&vi.days<=90&&React.createElement("div",{style:{background:vi.color+"15",border:"1px solid "+vi.color+"44",borderRadius:10,padding:"8px 12px",marginBottom:12,display:"flex",alignItems:"center",gap:8}},
       React.createElement("span",{style:{fontSize:16}},vi.days<0?"💀":vi.days<=30?"🚨":"⚠️"),
-      React.createElement("span",{style:{fontSize:12,color:vi.color,fontWeight:700}},`${vi.label}: ${vi.days<0?`Vencido há ${Math.abs(vi.days)} dias`:`${vi.days} dias restantes`}`)
+      React.createElement("span",{style:{fontSize:12,color:vi.color,fontWeight:700}},(vi.days<0?"Vencido há "+Math.abs(vi.days)+" dias":vi.days+" dias restantes"))
     ),
     otherLocs.length>0&&React.createElement("div",{style:{background:"rgba(255,211,102,0.08)",border:"1px solid rgba(255,211,102,0.3)",borderRadius:10,padding:10,marginBottom:12}},
       React.createElement("div",{style:{fontSize:11,color:"#ffd166",fontWeight:700,marginBottom:8}},"⚠️ Mesmo SKU em outros locais:"),
       otherLocs.map((l,i)=>React.createElement("div",{key:i,style:{fontSize:11,color:C.text,padding:"4px 0",borderTop:i>0?"1px solid rgba(255,255,255,0.06)":"none"}},
-        `📍 C${l.cor.number} · Bay ${l.bay.number} ${l.bay.side.slice(0,3)}. · Andar ${l.fl.number} · Qtd: `,
+        "📍 C"+l.cor.number+" · Bay "+l.bay.number+" "+l.bay.side.slice(0,3)+". · Andar "+l.fl.number+" · Qtd: ",
         React.createElement("span",{style:{color:C.accent,fontWeight:700}},l.box.qty)
       ))
     ),
-    React.createElement("div",{style:{background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:12,padding:12,marginBottom:14}},
+    React.createElement("div",{style:{background:"rgba(255,255,255,0.04)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:14}},
       React.createElement("div",{style:{fontSize:11,color:C.muted,fontWeight:700,marginBottom:10,letterSpacing:"0.05em"}},"📋 DADOS DO PRODUTO"),
       product
         ?React.createElement("div",{style:{display:"grid",gap:8}},rows.map((row,i)=>React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",gap:8}},
             React.createElement("span",{style:{fontSize:11,color:C.muted,flexShrink:0}},row.l),
-            React.createElement("span",{style:{fontSize:11,color:C.text,fontWeight:600,textAlign:"right",wordBreak:"break-word"}},row.v||"—")
+            React.createElement("span",{style:{fontSize:11,color:C.text,fontWeight:600,textAlign:"right",wordBreak:"break-word"}},row.v||"-")
           )))
         :React.createElement("div",{style:{textAlign:"center",padding:"10px 0"}},
             React.createElement("div",{style:{fontSize:22,marginBottom:6}},"📭"),
@@ -538,7 +532,7 @@ function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,all
   );
 }
 
-// ─── BOX EDIT MODAL ───────────────────────────────────────────────────────────
+// --- BOX EDIT MODAL -----------------------------------------------------------
 function BoxEditModal({modal,products,onSave,onClose,onDelete}){
   const isEdit=modal.type==="edit";
   const [form,setForm]=useState(isEdit?{...modal.box}:{sku:"",qty:"",updatedBy:"",date:todayFull(),validade:"",stackId:null,stackOrder:0});
@@ -553,7 +547,7 @@ function BoxEditModal({modal,products,onSave,onClose,onDelete}){
     isEdit&&React.createElement("button",{onClick:onDelete,style:{background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.25)",color:C.danger,borderRadius:8,padding:8,fontSize:12,width:"100%",marginBottom:14}},"🗑 Excluir esta caixa"),
     React.createElement(Lbl,{req:true},"SKU"),
     React.createElement(NumInput,{value:form.sku,onChange:v=>set("sku",v),placeholder:"Somente números"}),
-    product&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:C.accent,background:C.accentDim,borderRadius:8,padding:"6px 10px"}},`✓ ${product.desc||"Produto cadastrado"}`),
+    product&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:C.accent,background:C.accentDim,borderRadius:8,padding:"6px 10px"}},"✓ "+product.desc||"Produto cadastrado"),
     form.sku&&!product&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:C.dim,background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"6px 10px"}},"SKU não cadastrado."),
     React.createElement(Gap,null),
     React.createElement(Row,null,
@@ -563,7 +557,7 @@ function BoxEditModal({modal,products,onSave,onClose,onDelete}){
     React.createElement(Gap,null),
     React.createElement(Lbl,null,"Validade"),
     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:8}},
-      ["direta","calcular"].map(m=>React.createElement("button",{key:m,onClick:()=>setValdMode(m),style:{flex:1,background:valdMode===m?C.accentDim:"rgba(255,255,255,0.05)",border:`1px solid ${valdMode===m?"rgba(29,209,161,0.4)":C.border}`,color:valdMode===m?C.accent:C.muted,borderRadius:8,padding:7,fontSize:12,fontWeight:600}},m==="direta"?"📅 Data direta":"🔢 Calcular"))
+      ["direta","calcular"].map(m=>React.createElement("button",{key:m,onClick:()=>setValdMode(m),style:{flex:1,background:valdMode===m?C.accentDim:"rgba(255,255,255,0.05)",border:"1px solid "+valdMode===m?"rgba(29,209,161,0.4)":C.border,color:valdMode===m?C.accent:C.muted,borderRadius:8,padding:7,fontSize:12,fontWeight:600}},m==="direta"?"📅 Data direta":"🔢 Calcular"))
     ),
     valdMode==="direta"&&React.createElement(DateInput,{value:form.validade,onChange:v=>set("validade",v)}),
     valdMode==="calcular"&&React.createElement(React.Fragment,null,
@@ -571,13 +565,13 @@ function BoxEditModal({modal,products,onSave,onClose,onDelete}){
         React.createElement("div",null,React.createElement(Lbl,null,"Data fabricação"),React.createElement(DateInput,{value:fabDate,onChange:setFabDate})),
         React.createElement("div",null,React.createElement(Lbl,null,"Meses"),React.createElement(NumInput,{value:meses,onChange:setMeses,placeholder:"12"}))
       ),
-      form.validade&&React.createElement("div",{style:{marginTop:8,fontSize:12,color:C.accent,background:C.accentDim,borderRadius:8,padding:"7px 10px",textAlign:"center"}},`📅 Vencimento: ${form.validade}`)
+      form.validade&&React.createElement("div",{style:{marginTop:8,fontSize:12,color:C.accent,background:C.accentDim,borderRadius:8,padding:"7px 10px",textAlign:"center"}},"📅 Vencimento: "+form.validade)
     ),
     React.createElement(SaveBtn,{onClick:submit})
   );
 }
 
-// ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
+// --- PRODUCT MODAL ------------------------------------------------------------
 function ProductModal({product,onSave,onClose,onDelete}){
   const isEdit=!!product;
   const [form,setForm]=useState(isEdit?{...product}:{sku:"",desc:"",familia:"",fornecedor:"",um:"UN",preco:"",dtaInicio:"",dtaFim:"",ean:"",situacao:"NN"});
@@ -615,17 +609,17 @@ function ProductModal({product,onSave,onClose,onDelete}){
   );
 }
 
-// ─── PRODUCTS SCREEN ──────────────────────────────────────────────────────────
+// --- PRODUCTS SCREEN ----------------------------------------------------------
 function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete}){
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
   const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||p.desc&&p.desc.toLowerCase().includes(search.toLowerCase())||p.fornecedor&&p.fornecedor.toLowerCase().includes(search.toLowerCase()));
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh"}},
-    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1}},
         React.createElement("div",{style:{fontWeight:700,fontSize:16}},"🗂 Catálogo de Produtos"),
-        React.createElement("div",{style:{fontSize:11,color:C.muted}},`${Object.keys(products).length} produtos`)
+        React.createElement("div",{style:{fontSize:11,color:C.muted}},Object.keys(products).length+" produtos")
       ),
       React.createElement("button",{onClick:()=>setModal({product:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12,flexShrink:0}},"+ Novo")
     ),
@@ -636,7 +630,7 @@ function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirm
         React.createElement("div",{style:{fontSize:32,marginBottom:8}},"📭"),
         React.createElement("div",{style:{fontSize:13}},search?"Nenhum produto encontrado.":"Nenhum produto cadastrado.")
       ),
-      list.map(p=>React.createElement("div",{key:p.sku,onClick:()=>setModal({product:p}),className:"ch fin",style:{background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,padding:12,marginBottom:8,cursor:"pointer"}},
+      list.map(p=>React.createElement("div",{key:p.sku,onClick:()=>setModal({product:p}),className:"ch fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:8,cursor:"pointer"}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}},
           React.createElement(Tag,null,p.sku),
           p.um&&React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.muted},p.um)
@@ -644,8 +638,8 @@ function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirm
         p.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4,lineHeight:1.4}},p.desc),
         React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
           p.familia&&React.createElement("span",{style:{fontSize:10,color:C.dim}},p.familia),
-          p.fornecedor&&React.createElement("span",{style:{fontSize:10,color:C.dim}},`· ${p.fornecedor}`),
-          p.preco&&React.createElement("span",{style:{fontSize:10,color:C.dim}},`· R$ ${parsePrice(p.preco).toFixed(2)}`)
+          p.fornecedor&&React.createElement("span",{style:{fontSize:10,color:C.dim}},"· "+p.fornecedor),
+          p.preco&&React.createElement("span",{style:{fontSize:10,color:C.dim}},"· R$ "+parsePrice(p.preco).toFixed(2))
         )
       ))
     ),
@@ -653,20 +647,20 @@ function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirm
       product:modal.product,
       onSave:p=>{onSaveProduct(p);setModal(null);},
       onClose:()=>setModal(null),
-      onDelete:modal.product?()=>onConfirmDelete(`Excluir produto ${modal.product.sku}?`,()=>{onDeleteProduct(modal.product.sku);setModal(null);}):undefined,
+      onDelete:modal.product?()=>onConfirmDelete("Excluir produto "+modal.product.sku+"?",()=>{onDeleteProduct(modal.product.sku);setModal(null);}):undefined,
     })
   );
 }
 
-// ─── VALIDITY SCREEN ──────────────────────────────────────────────────────────
+// --- VALIDITY SCREEN ----------------------------------------------------------
 function ValidityScreen({data,onBack,onNavigate}){
   const items=getAllExpiring(data);
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh"}},
-    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1}},
         React.createElement("div",{style:{fontWeight:700,fontSize:16}},"⏰ Alertas de Validade"),
-        React.createElement("div",{style:{fontSize:11,color:C.muted}},`${items.length} item(s) a vencer em 90 dias`)
+        React.createElement("div",{style:{fontSize:11,color:C.muted}},items.length+" item(s) a vencer em 90 dias")
       )
     ),
     React.createElement("div",{style:{padding:"12px 14px"}},
@@ -675,23 +669,23 @@ function ValidityScreen({data,onBack,onNavigate}){
         React.createElement("div",{style:{fontSize:14}},"Nenhuma validade próxima!")
       ),
       items.map((item,i)=>React.createElement("div",{key:i,className:"ch fin",onClick:()=>onNavigate({corridorId:item.cor.id,bayId:item.bay.id,boxId:item.box.id}),
-        style:{background:"rgba(255,255,255,0.05)",border:`1px solid ${item.v.color}44`,borderRadius:12,padding:12,marginBottom:8,cursor:"pointer",position:"relative",overflow:"hidden"}},
+        style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+item.v.color+"44",borderRadius:12,padding:12,marginBottom:8,cursor:"pointer",position:"relative",overflow:"hidden"}},
         React.createElement("div",{style:{position:"absolute",left:0,top:0,bottom:0,width:3,background:item.v.color,borderRadius:"12px 0 0 12px"}}),
         React.createElement("div",{style:{paddingLeft:8}},
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}},
             React.createElement(Tag,null,item.box.sku),
-            React.createElement("span",{style:{fontSize:11,color:item.v.color,fontWeight:700}},`${item.v.label} · ${item.v.days<0?`Vencido há ${Math.abs(item.v.days)}d`:`${item.v.days} dias`}`)
+            React.createElement("span",{style:{fontSize:11,color:item.v.color,fontWeight:700}},item.v.label+" · "+(item.v.days<0?"Vencido há "+Math.abs(item.v.days)+"d":item.v.days+" dias"))
           ),
           item.product&&product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},item.product.desc),
-          React.createElement("div",{style:{fontSize:10,color:C.dim}},`📍 C${item.cor.number} · Bay ${item.bay.number} · Andar ${item.fl.number} · Qtd: ${item.box.qty}`),
-          React.createElement("div",{style:{fontSize:10,color:item.v.color,marginTop:4}},`📅 ${item.box.validade} → Ir para o local ›`)
+          React.createElement("div",{style:{fontSize:10,color:C.dim}},"📍 C"+item.cor.number+" · Bay "+item.bay.number+" · Andar "+item.fl.number+" · Qtd: "+item.box.qty),
+          React.createElement("div",{style:{fontSize:10,color:item.v.color,marginTop:4}},"📅 "+item.box.validade+" → Ir para o local ›")
         )
       ))
     )
   );
 }
 
-// ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
+// --- SEARCH OVERLAY -----------------------------------------------------------
 function SearchOverlay({data,onClose,onNavigate}){
   const [query,setQuery]=useState("");
   const inputRef=useRef(null);
@@ -707,38 +701,38 @@ function SearchOverlay({data,onClose,onNavigate}){
   })():[];
   const suggestions=term.length>=2&&term.length<7?allBoxSkus.filter(s=>s.startsWith(term)&&s!==term).slice(0,5):[];
   return React.createElement("div",{style:{position:"fixed",inset:0,background:C.bg,zIndex:300,display:"flex",flexDirection:"column"}},
-    React.createElement("div",{style:{padding:16,display:"flex",gap:10,alignItems:"center",borderBottom:`1px solid ${C.border}`,flexShrink:0}},
+    React.createElement("div",{style:{padding:16,display:"flex",gap:10,alignItems:"center",borderBottom:"1px solid "+C.border,flexShrink:0}},
       React.createElement("div",{style:{flex:1,position:"relative"}},
         React.createElement("input",{ref:inputRef,value:query,onChange:e=>setQuery(e.target.value),placeholder:"SKU ou nome do produto...",style:{paddingLeft:36}}),
         React.createElement("span",{style:{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:15,pointerEvents:"none"}},"🔍"),
         query&&React.createElement("button",{onClick:()=>setQuery(""),style:{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.dim,fontSize:16,lineHeight:1}},"✕")
       ),
-      React.createElement("button",{onClick:onClose,style:{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"8px 14px",fontSize:13,flexShrink:0}},"Fechar")
+      React.createElement("button",{onClick:onClose,style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:8,padding:"8px 14px",fontSize:13,flexShrink:0}},"Fechar")
     ),
-    suggestions.length>0&&React.createElement("div",{style:{padding:"8px 14px",borderBottom:`1px solid ${C.border}`,flexShrink:0,display:"flex",gap:6,flexWrap:"wrap"}},
+    suggestions.length>0&&React.createElement("div",{style:{padding:"8px 14px",borderBottom:"1px solid "+C.border,flexShrink:0,display:"flex",gap:6,flexWrap:"wrap"}},
       suggestions.map(s=>React.createElement("button",{key:s,onClick:()=>setQuery(s),style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.2)",color:C.accent,borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:600}},s))
     ),
     React.createElement("div",{style:{flex:1,overflowY:"auto",padding:14}},
       term.length>=2&&results.length===0&&React.createElement("div",{style:{textAlign:"center",padding:"40px 0",color:C.muted}},
         React.createElement("div",{style:{fontSize:28,marginBottom:8}},"🔍"),
-        React.createElement("div",null,`Nenhum resultado para "${term}"`)
+        React.createElement("div",null,"Nenhum resultado para \""+term+"\"")
       ),
       term.length<2&&React.createElement("div",{style:{textAlign:"center",padding:"40px 0",color:C.dim}},
         React.createElement("div",{style:{fontSize:28,marginBottom:8}},"💡"),
         React.createElement("div",{style:{fontSize:13}},"Digite o SKU ou nome do produto")
       ),
-      results.map((r,i)=>React.createElement("div",{key:i,className:"fin",style:{background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,padding:12,marginBottom:10}},
+      results.map((r,i)=>React.createElement("div",{key:i,className:"fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:10}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
           React.createElement(Tag,null,r.sku),
-          React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},`${r.locations.length} local(is)`)
+          React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
         ),
         r.product&&product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},r.product.desc),
         r.product&&product.fornecedor&&React.createElement("div",{style:{fontSize:11,color:C.muted,marginBottom:8}},r.product.fornecedor),
         r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>{onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id});onClose();},className:"ch",
           style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:4,textAlign:"left"}},
           React.createElement("div",null,
-            React.createElement("div",{style:{fontSize:11,color:C.text,fontWeight:600}},`📍 C${l.cor.number} · Bay ${l.bay.number} (${l.bay.side.slice(0,3)}.) · Andar ${l.fl.number}`),
-            React.createElement("div",{style:{fontSize:10,color:C.muted,marginTop:2}},`Qtd: ${l.box.qty}${l.box.updatedBy?` · ${l.box.updatedBy}`:""} · ${l.box.date}`)
+            React.createElement("div",{style:{fontSize:11,color:C.text,fontWeight:600}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" ("+l.bay.side.slice(0,3)+".) · Andar "+l.fl.number),
+            React.createElement("div",{style:{fontSize:10,color:C.muted,marginTop:2}},"Qtd: "+l.box.qty+(l.box.updatedBy?" · "+l.box.updatedBy:"")+" · "+l.box.date)
           ),
           React.createElement("span",{style:{color:C.accent,fontSize:18,marginLeft:8}},"›")
         ))
@@ -747,7 +741,7 @@ function SearchOverlay({data,onClose,onNavigate}){
   );
 }
 
-// ─── BAY SCREEN ───────────────────────────────────────────────────────────────
+// --- BAY SCREEN ---------------------------------------------------------------
 function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [modal,setModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
@@ -791,22 +785,22 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
 
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:100,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
-    React.createElement("div",{style:{padding:"14px 14px 10px",display:"flex",alignItems:"center",gap:8,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"14px 14px 10px",display:"flex",alignItems:"center",gap:8,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1,minWidth:0}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},`${corridor.mascot||""} Aéreo — Bay ${bay.number}`),
-        React.createElement("div",{style:{fontSize:10,color:C.muted}},`${bay.side} · ${bay.label} · C${corridor.number}`)
+        React.createElement("div",{style:{fontWeight:700,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},corridor.mascot||""+" Aéreo - Bay "+bay.number),
+        React.createElement("div",{style:{fontSize:10,color:C.muted}},bay.side+" · "+bay.label+" · C"+corridor.number)
       ),
-      React.createElement(Tag,null,`${floors.length} and.`),
-      React.createElement(Tag,null,`${totalBoxes} cx.`)
+      React.createElement(Tag,null,floors.length+" and."),
+      React.createElement(Tag,null,totalBoxes+" cx.")
     ),
     React.createElement("div",{style:{padding:"12px 12px 80px"}},
-      floors.map(floor=>React.createElement("div",{key:floor.id,style:{background:"rgba(0,0,0,0.25)",border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 10px 4px",marginBottom:10}},
+      floors.map(floor=>React.createElement("div",{key:floor.id,style:{background:"rgba(0,0,0,0.25)",border:"1px solid "+C.border,borderRadius:12,padding:"10px 10px 4px",marginBottom:10}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
-          React.createElement("span",{style:{fontSize:11,color:C.muted,fontWeight:700,letterSpacing:"0.08em"}},`ANDAR ${floor.number}`),
+          React.createElement("span",{style:{fontSize:11,color:C.muted,fontWeight:700,letterSpacing:"0.08em"}},"ANDAR "+floor.number),
           React.createElement("div",{style:{display:"flex",gap:6}},
             React.createElement("button",{onClick:()=>setModal({type:"add",floorId:floor.id}),style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:7,padding:"2px 11px",fontSize:19,lineHeight:"1.2"}},"+"),
-            React.createElement("button",{onClick:()=>{if(floor.boxes.length>0){alert("Remova as caixas antes.");return;}onRegisterUndo("Andar excluído");updateBayFloors(bay.floors.filter(f=>f.id!==floor.id));},style:{background:"none",border:`1px solid ${C.border}`,color:C.dim,borderRadius:7,padding:"2px 8px",fontSize:12}},"✕")
+            React.createElement("button",{onClick:()=>{if(floor.boxes.length>0){alert("Remova as caixas antes.");return;}onRegisterUndo("Andar excluído");updateBayFloors(bay.floors.filter(f=>f.id!==floor.id));},style:{background:"none",border:"1px solid "+C.border,color:C.dim,borderRadius:7,padding:"2px 8px",fontSize:12}},"✕")
           )
         ),
         React.createElement(FloorRow,{
@@ -816,7 +810,7 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
           dragRef,draggingId,setDraggingId,
         })
       )),
-      React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBay({...bay,floors:nf});},style:{background:"none",border:`1px dashed ${C.border}`,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},
+      React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBay({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},
         "+ Adicionar Andar"
       )
     ),
@@ -835,10 +829,10 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
   );
 }
 
-// ─── BAY MODAL ────────────────────────────────────────────────────────────────
+// --- BAY MODAL ----------------------------------------------------------------
 function BayModal({bay,side,onSave,onClose}){
   const [label,setLabel]=useState(bay&&bay.label||"");
-  return React.createElement(Modal,{onClose,title:`${bay?"✏️ Editar":"➕ Novo"} Bay — ${side}`},
+  return React.createElement(Modal,{onClose,title:bay?"✏️ Editar":"➕ Novo"+" Bay - "+side},
     React.createElement(Lbl,{req:true},"Nome / Rótulo"),
     React.createElement("input",{value:label,onChange:e=>setLabel(e.target.value),autoFocus:true}),
     React.createElement(SaveBtn,{onClick:()=>{if(!label.trim()){alert("Nome obrigatório!");return;}onSave(label.trim());}})
@@ -862,13 +856,13 @@ function SectorModal({sector,onSave,onClose}){
     React.createElement(Gap,null),
     React.createElement(Lbl,null,"Ícone"),
     React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}},
-      emojis.map(e=>React.createElement("button",{key:e,onClick:()=>setMascot(e),style:{background:mascot===e?C.accentDim:"rgba(255,255,255,0.06)",border:`1px solid ${mascot===e?"rgba(29,209,161,0.4)":C.border}`,borderRadius:8,padding:"6px 10px",fontSize:20}},e))
+      emojis.map(e=>React.createElement("button",{key:e,onClick:()=>setMascot(e),style:{background:mascot===e?C.accentDim:"rgba(255,255,255,0.06)",border:"1px solid "+mascot===e?"rgba(29,209,161,0.4)":C.border,borderRadius:8,padding:"6px 10px",fontSize:20}},e))
     ),
     React.createElement(SaveBtn,{onClick:()=>{if(!name.trim()){alert("Nome obrigatório!");return;}onSave({name:name.trim(),mascot});}})
   );
 }
 
-// ─── CORRIDOR SCREEN ──────────────────────────────────────────────────────────
+// --- CORRIDOR SCREEN ----------------------------------------------------------
 function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
   const [bayModal,setBayModal]=useState(null);
@@ -889,31 +883,31 @@ function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,hig
   const rightBays=corridor.bays.filter(b=>b.side==="Direito").sort((a,b)=>a.number-b.number);
   function BayCard({bay}){
     const total=bay.floors.reduce((s,f)=>s+f.boxes.length,0);
-    return React.createElement("div",{className:"fin",style:{background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
+    return React.createElement("div",{className:"fin",style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
       React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},corridor.mascot||"📦"),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px 6px",borderBottom:"1px solid rgba(255,255,255,0.06)"}},
-        React.createElement(Tag,null,`Bay ${bay.number}`),
+        React.createElement(Tag,null,"Bay "+bay.number),
         React.createElement("div",{style:{display:"flex",gap:4}},
-          React.createElement("button",{onClick:e=>{e.stopPropagation();setBayModal({side:bay.side,bay});},style:{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:"3px 8px",fontSize:11}},"✏️"),
-          React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete(`Excluir Bay ${bay.number}?`,()=>{
+          React.createElement("button",{onClick:e=>{e.stopPropagation();setBayModal({side:bay.side,bay});},style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:6,padding:"3px 8px",fontSize:11}},"✏️"),
+          React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete("Excluir Bay "+bay.number+"?",()=>{
             if(bay.floors.reduce((s,f)=>s+f.boxes.length,0)>0){alert("Remova todas as caixas antes.");return;}
-            onRegisterUndo(`Bay ${bay.number} excluído`);
+            onRegisterUndo("Bay "+bay.number+" excluído");
             onUpdateCorridor({...corridor,bays:corridor.bays.filter(b=>b.id!==bay.id)});
           });},style:{background:"none",border:"1px solid rgba(255,107,107,0.2)",color:C.danger,borderRadius:6,padding:"3px 8px",fontSize:11}},"🗑")
         )
       ),
       React.createElement("div",{onClick:()=>setSelectedBay(bay.id),className:"ch",style:{padding:"10px 10px 12px",cursor:"pointer"}},
         React.createElement("div",{style:{fontWeight:600,fontSize:13,marginBottom:8,color:C.text}},bay.label),
-        React.createElement(Tag,null,`${total} cx · ${bay.floors.length} and. ›`)
+        React.createElement(Tag,null,total+" cx · "+bay.floors.length+" and. ›")
       )
     );
   }
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
-    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",null,
-        React.createElement("div",{style:{fontWeight:700,fontSize:17}},`${corridor.mascot||""} Corredor ${corridor.number}`)
+        React.createElement("div",{style:{fontWeight:700,fontSize:17}},corridor.mascot||""+" Corredor "+corridor.number)
       )
     ),
     React.createElement("div",{style:{padding:14}},
@@ -922,15 +916,15 @@ function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,hig
         React.createElement("span",{style:{fontSize:10,color:C.accent,fontWeight:700,textAlign:"right"}},"DIREITO ◉")
       ),
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-        React.createElement("div",null,leftBays.map(b=>React.createElement(BayCard,{key:b.id,bay:b})),React.createElement("button",{onClick:()=>setBayModal({side:"Esquerdo",bay:null}),style:{background:"none",border:`1px dashed ${C.border}`,color:C.muted,borderRadius:10,padding:9,width:"100%",fontSize:12,marginBottom:8}},"+ Bay Esq.")),
-        React.createElement("div",null,rightBays.map(b=>React.createElement(BayCard,{key:b.id,bay:b})),React.createElement("button",{onClick:()=>setBayModal({side:"Direito",bay:null}),style:{background:"none",border:`1px dashed ${C.border}`,color:C.muted,borderRadius:10,padding:9,width:"100%",fontSize:12,marginBottom:8}},"+ Bay Dir."))
+        React.createElement("div",null,leftBays.map(b=>React.createElement(BayCard,{key:b.id,bay:b})),React.createElement("button",{onClick:()=>setBayModal({side:"Esquerdo",bay:null}),style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:10,padding:9,width:"100%",fontSize:12,marginBottom:8}},"+ Bay Esq.")),
+        React.createElement("div",null,rightBays.map(b=>React.createElement(BayCard,{key:b.id,bay:b})),React.createElement("button",{onClick:()=>setBayModal({side:"Direito",bay:null}),style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:10,padding:9,width:"100%",fontSize:12,marginBottom:8}},"+ Bay Dir."))
       )
     ),
     bayModal&&React.createElement(BayModal,{bay:bayModal.bay,side:bayModal.side,onSave:handleBaySave,onClose:()=>setBayModal(null)})
   );
 }
 
-// ─── SECTOR SCREEN ────────────────────────────────────────────────────────────
+// --- SECTOR SCREEN ------------------------------------------------------------
 function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
   const [corridorModal,setCorridorModal]=useState(null);
@@ -947,11 +941,11 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
   }
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},sector.mascot),
-    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:17}},`${sector.mascot} ${sector.name}`),
-        React.createElement("div",{style:{fontSize:11,color:C.muted}},`${corridors.length} corredor(es)`)
+        React.createElement("div",{style:{fontWeight:700,fontSize:17}},sector.mascot+" "+sector.name),
+        React.createElement("div",{style:{fontSize:11,color:C.muted}},corridors.length+" corredor(es)")
       ),
       React.createElement("button",{onClick:()=>setCorridorModal({corridor:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12}},"+ Corredor")
     ),
@@ -962,23 +956,23 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
       ),
       [...corridors].sort((a,b)=>a.number-b.number).map(cor=>{
         const totalBoxes=cor.bays.reduce((s,b)=>s+b.floors.reduce((s2,f)=>s2+f.boxes.length,0),0);
-        return React.createElement("div",{key:cor.id,className:"fin",style:{background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
+        return React.createElement("div",{key:cor.id,className:"fin",style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
           React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},sector.mascot),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px 6px",borderBottom:"1px solid rgba(255,255,255,0.06)"}},
-            React.createElement(Tag,null,`Corredor ${cor.number}`),
+            React.createElement(Tag,null,"Corredor "+cor.number),
             React.createElement("div",{style:{display:"flex",gap:4}},
-              React.createElement("button",{onClick:e=>{e.stopPropagation();setCorridorModal({corridor:cor});},style:{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:"3px 8px",fontSize:11}},"✏️"),
-              React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete(`Excluir Corredor ${cor.number}?`,()=>{
+              React.createElement("button",{onClick:e=>{e.stopPropagation();setCorridorModal({corridor:cor});},style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:6,padding:"3px 8px",fontSize:11}},"✏️"),
+              React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete("Excluir Corredor "+cor.number+"?",()=>{
                 const total=cor.bays.reduce((s,b)=>s+b.floors.reduce((s2,f)=>s2+f.boxes.length,0),0);
                 if(total>0){alert("Remova todas as caixas antes.");return;}
-                onRegisterUndo(`Corredor ${cor.number} excluído`);
+                onRegisterUndo("Corredor "+cor.number+" excluído");
                 onDeleteCorridor(cor.id);
               });},style:{background:"none",border:"1px solid rgba(255,107,107,0.2)",color:C.danger,borderRadius:6,padding:"3px 8px",fontSize:11}},"🗑")
             )
           ),
           React.createElement("div",{onClick:()=>setSelectedCorridorId(cor.id),className:"ch",style:{padding:"10px 10px 12px",cursor:"pointer"}},
-            React.createElement("div",{style:{fontWeight:600,fontSize:14,marginBottom:6,color:C.text}},`Corredor ${cor.number}`),
-            React.createElement(Tag,null,`${cor.bays.length} bays · ${totalBoxes} caixas ›`)
+            React.createElement("div",{style:{fontWeight:600,fontSize:14,marginBottom:6,color:C.text}},"Corredor "+cor.number),
+            React.createElement(Tag,null,cor.bays.length+" bays · "+totalBoxes+" caixas ›")
           )
         );
       })
@@ -987,14 +981,14 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
   );
 }
 
-// ─── HOME SCREEN ──────────────────────────────────────────────────────────────
+// --- HOME SCREEN --------------------------------------------------------------
 function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSearch,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,isAdmin,profile,onLogout}){
   const [sectorModal,setSectorModal]=useState(null);
   const expiringItems=getAllExpiring(data);
   const hasExpiring=expiringItems.length>0;
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},"📦"),
-    React.createElement("div",{style:{padding:"22px 16px 14px",borderBottom:`1px solid ${C.border}`}},
+    React.createElement("div",{style:{padding:"22px 16px 14px",borderBottom:"1px solid "+C.border}},
       React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:4}},"📦 Estoque Aéreo"),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
         React.createElement("div",{style:{fontSize:12,color:C.muted}},profile?"Olá, "+(profile.name||"")+(profile.role==="admin"?" 👑":""):"Toque para explorar"),
@@ -1002,34 +996,34 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
       ),
       React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
         React.createElement("button",{onClick:onOpenProducts,style:{flex:1,background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},"🗂 Produtos"),
-        React.createElement("button",{onClick:onOpenValidity,className:hasExpiring?"blink":"",style:{flex:1,background:hasExpiring?"rgba(255,107,107,0.12)":"rgba(255,255,255,0.06)",border:`1px solid ${hasExpiring?"rgba(255,107,107,0.3)":C.border}`,color:hasExpiring?C.danger:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},`${hasExpiring?"⚠️ ":"⏰ "}Validades${hasExpiring?` (${expiringItems.length})`:""}`)
+        React.createElement("button",{onClick:onOpenValidity,className:hasExpiring?"blink":"",style:{flex:1,background:hasExpiring?"rgba(255,107,107,0.12)":"rgba(255,255,255,0.06)",border:"1px solid "+(hasExpiring?"rgba(255,107,107,0.3)":C.border),color:hasExpiring?C.danger:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},(hasExpiring?"⚠️ Validades ("+expiringItems.length+")":"⏰ Validades"))
       ),
-      React.createElement("button",{onClick:onOpenSearch,style:{background:"rgba(255,255,255,0.08)",border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",color:C.dim,fontSize:14,width:"100%",textAlign:"left",display:"flex",alignItems:"center",gap:8}},
+      React.createElement("button",{onClick:onOpenSearch,style:{background:"rgba(255,255,255,0.08)",border:"1px solid "+C.border,borderRadius:10,padding:"11px 14px",color:C.dim,fontSize:14,width:"100%",textAlign:"left",display:"flex",alignItems:"center",gap:8}},
         React.createElement("span",null,"🔍")," Buscar por SKU ou nome..."
       )
     ),
     React.createElement("div",{style:{padding:"16px 16px 60px"}},
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
         React.createElement("div",{style:{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:"0.08em"}},"SETORES"),
-        React.createElement("button",{onClick:()=>setSectorModal({sector:null}),style:{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"4px 10px",fontSize:11}},"+ Setor")
+        React.createElement("button",{onClick:()=>setSectorModal({sector:null}),style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:8,padding:"4px 10px",fontSize:11}},"+ Setor")
       ),
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
         (data.sectors||[]).map(sector=>{
           const secCors=(data.corridors||[]).filter(c=>c.sectorId===sector.id);
           const totalBoxes=secCors.reduce((s,c)=>s+c.bays.reduce((s2,b)=>s2+b.floors.reduce((s3,f)=>s3+f.boxes.length,0),0),0);
-          return React.createElement("div",{key:sector.id,className:"fin",style:{background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",position:"relative"}},
+          return React.createElement("div",{key:sector.id,className:"fin",style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,borderRadius:14,overflow:"hidden",position:"relative"}},
             React.createElement("div",{style:{display:"flex",justifyContent:"flex-end",padding:"6px 8px 0",gap:4,position:"relative",zIndex:1}},
-              React.createElement("button",{onClick:e=>{e.stopPropagation();setSectorModal({sector});},style:{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:"2px 6px",fontSize:10}},"✏️"),
-              React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete(`Excluir setor "${sector.name}"?`,()=>{
+              React.createElement("button",{onClick:e=>{e.stopPropagation();setSectorModal({sector});},style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:6,padding:"2px 6px",fontSize:10}},"✏️"),
+              React.createElement("button",{onClick:e=>{e.stopPropagation();onConfirmDelete("Excluir setor \""+sector.name+"\"?",()=>{
                 if((data.corridors||[]).some(c=>c.sectorId===sector.id)){alert("Remova todos os corredores deste setor antes.");return;}
-                onRegisterUndo(`Setor "${sector.name}" excluído`);
+                onRegisterUndo("Setor \""+sector.name+"\" excluído");
                 onDeleteSector(sector.id);
               });},style:{background:"none",border:"1px solid rgba(255,107,107,0.2)",color:C.danger,borderRadius:6,padding:"2px 6px",fontSize:10}},"🗑")
             ),
             React.createElement("div",{onClick:()=>onSelectSector(sector.id),className:"ch",style:{padding:"4px 14px 16px",cursor:"pointer",textAlign:"center"}},
               React.createElement("div",{style:{fontSize:40,marginBottom:8,lineHeight:1}},sector.mascot),
               React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:4,color:C.text,lineHeight:1.3}},sector.name),
-              React.createElement("div",{style:{fontSize:10,color:C.dim}},`${secCors.length} corr. · ${totalBoxes} cx.`)
+              React.createElement("div",{style:{fontSize:10,color:C.dim}},secCors.length+" corr. · "+totalBoxes+" cx.")
             )
           );
         })
@@ -1047,7 +1041,7 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
   );
 }
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
+// --- ROOT ---------------------------------------------------------------------
 export default function App(){
   const [data,setData]=useState(null);
   const [screenStack,setScreenStack]=useState([{type:"home"}]);
@@ -1097,7 +1091,7 @@ export default function App(){
   function doUndo(){if(undoState){setData(undoState.snapshot);setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}}
   function confirmDelete(msg,onConfirm){setConfirmState({msg,onConfirm});}
 
-  // ── helpers to sync local state + Supabase ──
+  // -- helpers to sync local state + Supabase --
   function updateCorridor(updated){
     setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));
     syncCorridor(updated).catch(console.error);
@@ -1137,15 +1131,20 @@ export default function App(){
 
   async function syncCorridor(cor){
     await db.upsertCorridor({id:cor.id,sector_id:cor.sectorId,number:cor.number});
-    for(const bay of cor.bays||[]){
+    const bays=cor.bays||[];
+    const syncBays=bays.map(async function(bay){
       await db.upsertBay({id:bay.id,corridor_id:cor.id,number:bay.number,side:bay.side,label:bay.label});
-      for(const floor of bay.floors||[]){
+      const floors=bay.floors||[];
+      const syncFloors=floors.map(async function(floor){
         await db.upsertFloor({id:floor.id,bay_id:bay.id,number:floor.number});
-        for(const box of floor.boxes||[]){
-          await db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:box.date||null,validade:box.validade||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0});
-        }
-      }
-    }
+        const boxes=floor.boxes||[];
+        return Promise.all(boxes.map(function(box){
+          return db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:box.date||null,validade:box.validade||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0});
+        }));
+      });
+      return Promise.all(syncFloors);
+    });
+    return Promise.all(syncBays);
   }
 
   function handleNavigate({corridorId,bayId,boxId}){
