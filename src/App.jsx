@@ -320,24 +320,25 @@ function UndoToast({msg,onUndo,onDismiss}){
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
-  // index 0 = first added = BOTTOM of pile = shown BEHIND
-  // last index = last added = TOP of pile = shown IN FRONT
-  const STEP=34;
+  // index 0 = first added = BOTTOM physically = FRONT visually (priority)
+  // last index = last added = TOP physically = BEHIND visually
+  const STEP=28;
   const isSingle=group.length===1;
-  // Render bottom-first so top card is painted last (on top)
   const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
 
   return React.createElement("div",{
     style:{position:"relative",width:112,flexShrink:0,height:colHeight||undefined,marginRight:4},
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
-    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[group.length-1].id,floorId);}
+    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[0].id,floorId);}
   },
-    group.map((box,i)=>{
+    // Render in reverse so index 0 (front) is painted last = highest visually
+    [...group].reverse().map((box,ri)=>{
+      const i=group.length-1-ri; // real index in group
       const vi=getValidity(box.validade);
-      const isTop=i===group.length-1; // last = top of pile = front
+      const isFront=i===0; // first added = front
       const isHov=hovered===i;
-      // bottom card has highest baseOffset (furthest down), top card is at 0
-      const baseOffset=isSingle?0:(group.length-1-i)*STEP;
+      // front card at offset 0, cards behind go further down
+      const baseOffset=isSingle?0:i*STEP;
       // hover: only THIS card rises
       const liftOffset=isHov?-12:0;
       return React.createElement("div",{
@@ -354,15 +355,15 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
           position:isSingle?"relative":"absolute",
           top:isSingle?undefined:baseOffset,
           left:0,width:"100%",
-          background:isHov?"rgba(25,80,100,0.99)":isTop?"rgba(12,58,76,0.97)":"rgba(7,38,54,0.95)",
-          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isHov?"rgba(29,209,161,0.7)":isTop?"rgba(29,209,161,0.45)":"rgba(29,209,161,0.25)"),
+          background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,76,0.97)":"rgba(7,38,54,0.95)",
+          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isHov?"rgba(29,209,161,0.7)":isFront?"rgba(29,209,161,0.45)":"rgba(29,209,161,0.25)"),
           borderRadius:10,padding:"7px 8px 6px",
           cursor:"grab",overflow:"hidden",
           opacity:1,
           transform:"translateY("+liftOffset+"px)",
           transition:"transform 0.18s ease, background 0.15s, box-shadow 0.18s",
-          zIndex:isHov?100:i+1,
-          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isTop?"0 4px 12px rgba(0,0,0,0.5)":"0 1px 4px rgba(0,0,0,0.4)",
+          zIndex:isHov?100:group.length-i,
+          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isFront?"0 4px 12px rgba(0,0,0,0.5)":"0 1px 4px rgba(0,0,0,0.4)",
           userSelect:"none",
         }
       },
@@ -371,7 +372,7 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
         ),
         // SKU always visible and prominent
         React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:11,color:"#e4f5f0",wordBreak:"break-all",marginBottom:3}},box.sku),
-        isTop?(
+        isFront?(
           // Top card: full layout with divider, qty, name, date
           React.createElement(React.Fragment,null,
             !isSingle&&React.createElement("div",{style:{borderTop:"1px dashed rgba(29,209,161,0.2)",marginBottom:4}}),
