@@ -320,27 +320,26 @@ function UndoToast({msg,onUndo,onDismiss}){
 // ─── STACK COLUMN: displays a pile of boxes with fan-on-hover effect ──────────
 function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
-  // index 0 = first added = BOTTOM physically = FRONT visually (priority)
-  // last index = last added = TOP physically = BEHIND visually
-  const STEP=28;
+  // group[0] = first added = bottom physically = FRONT (most visible)
+  // group[1], [2]... = added later = stacked on top physically = shown BEHIND
+  const PEEK=32; // how much of each back card peeks above the front card
   const isSingle=group.length===1;
-  const colHeight=isSingle?null:72+(group.length-1)*STEP+24;
+  const colHeight=isSingle?null:90+(group.length-1)*PEEK;
 
   return React.createElement("div",{
-    style:{position:"relative",width:112,flexShrink:0,height:colHeight||undefined,marginRight:4},
+    style:{position:"relative",width:116,flexShrink:0,height:colHeight||undefined,marginRight:6},
     onDragOver:e=>{e.preventDefault();e.stopPropagation();},
-    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current&&group[0])onDropOnStack(group[0].id,floorId);}
+    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current)onDropOnStack(group[0].id,floorId);}
   },
-    // Render in reverse so index 0 (front) is painted last = highest visually
+    // Render from last to first so group[0] (front) is painted on top
     [...group].reverse().map((box,ri)=>{
-      const i=group.length-1-ri; // real index in group
+      const i=group.length-1-ri; // real index: 0=front, 1,2...=behind
       const vi=getValidity(box.validade);
-      const isFront=i===0; // first added = front
+      const isFront=i===0;
       const isHov=hovered===i;
-      // front card at offset 0, cards behind go further down
-      const baseOffset=isSingle?0:i*STEP;
-      // hover: only THIS card rises
-      const liftOffset=isHov?-12:0;
+      // front card sits at bottom of container, back cards peek above it
+      const topOffset=isSingle?0:(group.length-1-i)*PEEK;
+      const liftOffset=isHov?-10:0;
       return React.createElement("div",{
         key:box.id,
         draggable:true,
@@ -353,49 +352,52 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
         onClick:e=>{e.stopPropagation();onClickBox(box);},
         style:{
           position:isSingle?"relative":"absolute",
-          top:isSingle?undefined:baseOffset,
+          top:isSingle?undefined:topOffset,
           left:0,width:"100%",
-          background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,76,0.97)":"rgba(7,38,54,0.95)",
-          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isHov?"rgba(29,209,161,0.7)":isFront?"rgba(29,209,161,0.45)":"rgba(29,209,161,0.25)"),
-          borderRadius:10,padding:"7px 8px 6px",
-          cursor:"grab",overflow:"hidden",
-          opacity:1,
+          background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,78,0.98)":"rgba(8,42,58,0.96)",
+          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)"),
+          borderRadius:10,
+          padding:isFront?"8px 9px":"6px 9px",
+          cursor:"grab",overflow:"hidden",opacity:1,
           transform:"translateY("+liftOffset+"px)",
-          transition:"transform 0.18s ease, background 0.15s, box-shadow 0.18s",
+          transition:"transform 0.18s ease, box-shadow 0.18s",
           zIndex:isHov?100:group.length-i,
-          boxShadow:isHov?"0 10px 24px rgba(0,0,0,0.8)":isFront?"0 4px 12px rgba(0,0,0,0.5)":"0 1px 4px rgba(0,0,0,0.4)",
+          boxShadow:isHov?"0 8px 20px rgba(0,0,0,0.8)":isFront?"0 4px 14px rgba(0,0,0,0.6)":"0 2px 6px rgba(0,0,0,0.5)",
           userSelect:"none",
         }
       },
+        // Mascot watermark
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}},
-          React.createElement("div",{style:{fontSize:36,opacity:0.05,lineHeight:1}},mascot)
+          React.createElement("div",{style:{fontSize:34,opacity:0.05,lineHeight:1}},mascot)
         ),
-        // SKU always visible and prominent
-        React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:11,color:"#e4f5f0",wordBreak:"break-all",marginBottom:3}},box.sku),
         isFront?(
-          // Top card: full layout with divider, qty, name, date
+          // FRONT card: full layout like original box card
           React.createElement(React.Fragment,null,
-            !isSingle&&React.createElement("div",{style:{borderTop:"1px dashed rgba(29,209,161,0.2)",marginBottom:4}}),
+            React.createElement("div",{style:{position:"relative",fontWeight:800,fontSize:12,color:"#e4f5f0",wordBreak:"break-all",marginBottom:6}},box.sku),
+            React.createElement("div",{style:{borderTop:"1px dashed rgba(29,209,161,0.2)",marginBottom:6}}),
             React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
               React.createElement("div",null,
-                React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},"QTD."),
-                React.createElement("div",{style:{fontSize:15,fontWeight:800,color:C.accent,lineHeight:1}},box.qty)
+                React.createElement("div",{style:{fontSize:8,color:"#5a9d90",marginBottom:1}},"QTD."),
+                React.createElement("div",{style:{fontSize:16,fontWeight:800,color:"#1dd1a1",lineHeight:1}},box.qty)
               ),
               React.createElement("div",{style:{textAlign:"right"}},
-                box.updatedBy&&React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},box.updatedBy),
-                box.date&&React.createElement("div",{style:{fontSize:7,color:"#4a8878"}},box.date),
-                vi&&React.createElement("div",{style:{fontSize:7,color:vi.color,fontWeight:700}},"●")
+                box.updatedBy&&React.createElement("div",{style:{fontSize:8,color:"#5a9d90"}},box.updatedBy),
+                box.date&&React.createElement("div",{style:{fontSize:8,color:"#4a8878"}},box.date),
+                vi&&React.createElement("div",{style:{fontSize:8,color:vi.color,fontWeight:700}},"●")
               )
             )
           )
         ):(
-          // Cards behind: compact — SKU already shown above, just qty on the right
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            React.createElement("div",{style:{fontSize:7,color:"#5a9d90"}},"QTD."),
-            React.createElement("div",{style:{fontSize:12,fontWeight:800,color:C.accent}},box.qty)
+          // BACK cards: compact strip — SKU left, QTD right
+          React.createElement("div",{style:{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement("div",{style:{fontWeight:700,fontSize:11,color:"#c8e8e0",wordBreak:"break-all",flex:1}},box.sku),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,flexShrink:0}},
+              React.createElement("div",{style:{fontSize:8,color:"#5a9d90"}},"QTD"),
+              React.createElement("div",{style:{fontSize:12,fontWeight:800,color:"#1dd1a1"}},box.qty)
+            )
           )
         ),
-        React.createElement("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:2,background:vi?vi.color+"55":"rgba(29,209,161,0.18)",borderRadius:"0 0 10px 10px"}})
+        React.createElement("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:2,background:vi?vi.color+"44":"rgba(29,209,161,0.15)",borderRadius:"0 0 10px 10px"}})
       );
     })
   );
