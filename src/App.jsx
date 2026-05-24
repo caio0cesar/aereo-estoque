@@ -782,7 +782,9 @@ function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlight
 
   function doDeleteBox(){
     onRegisterUndo("Caixa excluída");
-    updateBayFloors(bay.floors.map(f=>f.id===modal.floorId?{...f,boxes:f.boxes.filter(b=>b.id!==modal.box.id)}:f));
+    const boxId=modal.box.id;
+    updateBayFloors(bay.floors.map(f=>f.id===modal.floorId?{...f,boxes:f.boxes.filter(b=>b.id!==boxId)}:f));
+    db.deleteBox(boxId).catch(console.error);
     setModal(null);setDetailModal(null);
   }
 
@@ -1094,14 +1096,56 @@ export default function App(){
   function doUndo(){if(undoState){setData(undoState.snapshot);setUndoState(null);if(undoTimerRef.current)clearTimeout(undoTimerRef.current);}}
   function confirmDelete(msg,onConfirm){setConfirmState({msg,onConfirm});}
 
-  function updateCorridor(updated){setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));}
-  function addCorridor(cor){setData(d=>({...d,corridors:[...d.corridors,cor]}));}
-  function deleteCorridor(id){setData(d=>({...d,corridors:d.corridors.filter(c=>c.id!==id)}));}
-  function saveProduct(p){setData(d=>({...d,products:{...d.products,[p.sku]:p}}));}
-  function deleteProduct(sku){setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});}
-  function addSector(s){setData(d=>({...d,sectors:[...(d.sectors||[]),s]}));}
-  function editSector(s){setData(d=>({...d,sectors:(d.sectors||[]).map(x=>x.id===s.id?s:x)}));}
-  function deleteSector(id){setData(d=>({...d,sectors:(d.sectors||[]).filter(s=>s.id!==id)}));}
+  // ── helpers to sync local state + Supabase ──
+  function updateCorridor(updated){
+    setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));
+    syncCorridor(updated).catch(console.error);
+  }
+  function addCorridor(cor){
+    setData(d=>({...d,corridors:[...d.corridors,cor]}));
+    db.upsertCorridor({id:cor.id,sector_id:cor.sectorId,number:cor.number}).catch(console.error);
+    (cor.bays||[]).forEach(b=>{
+      db.upsertBay({id:b.id,corridor_id:cor.id,number:b.number,side:b.side,label:b.label}).catch(console.error);
+      (b.floors||[]).forEach(f=>db.upsertFloor({id:f.id,bay_id:b.id,number:f.number}).catch(console.error));
+    });
+  }
+  function deleteCorridor(id){
+    setData(d=>({...d,corridors:d.corridors.filter(c=>c.id!==id)}));
+    db.deleteCorridor(id).catch(console.error);
+  }
+  function saveProduct(p){
+    setData(d=>({...d,products:{...d.products,[p.sku]:p}}));
+    db.upsertProduct({sku:p.sku,description:p.desc,familia:p.familia,fornecedor:p.fornecedor,um:p.um,preco:parsePrice(p.preco)||null,dta_inicio:p.dtaInicio||null,dta_fim:p.dtaFim||null,ean:p.ean||null,situacao:p.situacao||"NN"}).catch(console.error);
+  }
+  function deleteProduct(sku){
+    setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});
+    db.deleteProduct(sku).catch(console.error);
+  }
+  function addSector(s){
+    setData(d=>({...d,sectors:[...(d.sectors||[]),s]}));
+    db.upsertSector({id:s.id,name:s.name,mascot:s.mascot}).catch(console.error);
+  }
+  function editSector(s){
+    setData(d=>({...d,sectors:(d.sectors||[]).map(x=>x.id===s.id?s:x)}));
+    db.upsertSector({id:s.id,name:s.name,mascot:s.mascot}).catch(console.error);
+  }
+  function deleteSector(id){
+    setData(d=>({...d,sectors:(d.sectors||[]).filter(s=>s.id!==id)}));
+    db.deleteSector(id).catch(console.error);
+  }
+
+  async function syncCorridor(cor){
+    await db.upsertCorridor({id:cor.id,sector_id:cor.sectorId,number:cor.number});
+    for(const bay of cor.bays||[]){
+      await db.upsertBay({id:bay.id,corridor_id:cor.id,number:bay.number,side:bay.side,label:bay.label});
+      for(const floor of bay.floors||[]){
+        await db.upsertFloor({id:floor.id,bay_id:bay.id,number:floor.number});
+        for(const box of floor.boxes||[]){
+          await db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:box.date||null,validade:box.validade||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0});
+        }
+      }
+    }
+  }
 
   function handleNavigate({corridorId,bayId,boxId}){
     const cor=data.corridors.find(c=>c.id===corridorId);
