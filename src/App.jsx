@@ -383,102 +383,156 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
   );
 }
 
-// --- FLOOR ROW: horizontal scroll with stacks ---------------------------------
-function FloorRow({floor,mascot,products,corridors,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
-  const [dragOver,setDragOver]=useState(false);
-  const groups=getStackGroups(floor.boxes);
+// --- FLOOR ROW: 10 fixed slots, free positioning, horizontal scroll ------------
+function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
+  var MAX_SLOTS = 10;
+  var SLOT_W = 124;
+  var SLOT_H = 100;
+  var GAP = 8;
 
-  function dropOnFloor(e){
-    const dr=dragRef.current;
-    if(!dr)return;
-    // Drop on empty floor space = standalone, remove from any stack
-    const box={...dr.box,stackId:null,stackOrder:0};
-    let newBoxes;
-    if(dr.fromFloorId===floor.id){
-      newBoxes=floor.boxes.map(b=>b.id===box.id?box:b);
+  // slots: array of 10, each is null or a stack group (array of boxes)
+  // Build slot map from boxes
+  function buildSlots(boxes) {
+    var slots = [];
+    var i;
+    for(i=0;i<MAX_SLOTS;i++) slots.push(null);
+    // Group by stackId
+    var stacks = {};
+    var order = [];
+    var seen = {};
+    boxes.forEach(function(b) {
+      var key = b.stackId || b.id;
+      if(!seen[key]){ seen[key]=true; order.push(key); }
+      if(!stacks[key]) stacks[key]=[];
+      stacks[key].push(b);
+    });
+    // Place stacks into their slots
+    order.forEach(function(key, idx) {
+      var group = stacks[key].sort(function(a,b){ return (a.stackOrder||0)-(b.stackOrder||0); });
+      var slotIdx = group[0].slotIndex != null ? group[0].slotIndex : idx;
+      if(slotIdx >= MAX_SLOTS) slotIdx = MAX_SLOTS - 1;
+      // find first free slot from slotIdx
+      while(slotIdx < MAX_SLOTS && slots[slotIdx] !== null) slotIdx++;
+      if(slotIdx < MAX_SLOTS) slots[slotIdx] = group;
+    });
+    return slots;
+  }
+
+  var slots = buildSlots(floor.boxes);
+  var [dragOverSlot, setDragOverSlot] = useState(-1);
+
+  // scroll with touch drag
+  var scrollRef = useRef(null);
+  var touchStartX = useRef(0);
+  var touchScrollLeft = useRef(0);
+  var touchDragging = useRef(false);
+
+  function onTouchStart(e) {
+    if(dragRef.current) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchScrollLeft.current = scrollRef.current ? scrollRef.current.scrollLeft : 0;
+    touchDragging.current = false;
+  }
+  function onTouchMove(e) {
+    if(dragRef.current) return;
+    var dx = touchStartX.current - e.touches[0].clientX;
+    if(Math.abs(dx) > 6) touchDragging.current = true;
+    if(touchDragging.current && scrollRef.current) {
+      scrollRef.current.scrollLeft = touchScrollLeft.current + dx;
+    }
+  }
+
+  function dropOnSlot(slotIdx) {
+    var dr = dragRef.current;
+    if(!dr) return;
+    dragRef.current = null;
+    setDragOverSlot(-1);
+
+    var existingInSlot = slots[slotIdx];
+    var draggedBox = dr.box;
+
+    if(existingInSlot) {
+      // Stack on existing group
+      var topBox = existingInSlot[existingInSlot.length-1];
+      var stackId = topBox.stackId || (draggedBox.id + "_stk");
+      var maxOrder = existingInSlot.reduce(function(m,b){ return Math.max(m, b.stackOrder||0); }, 0);
+      if(existingInSlot.length >= 10) { alert("Maximo de 10 caixas por pilha!"); return; }
+      var newBox = Object.assign({}, draggedBox, {stackId: stackId, stackOrder: maxOrder+1, slotIndex: slotIdx});
+      var newBoxes = floor.boxes.filter(function(b){ return b.id !== draggedBox.id; });
+      // Update all in slot to have same stackId
+      newBoxes = newBoxes.map(function(b) {
+        if(existingInSlot.find(function(x){ return x.id===b.id; })) {
+          return Object.assign({}, b, {stackId: stackId, slotIndex: slotIdx});
+        }
+        return b;
+      });
+      newBoxes.push(newBox);
+      onUpdateFloor(floor.id, newBoxes, dr.fromFloorId, draggedBox.id, newBox);
     } else {
-      newBoxes=[...floor.boxes,box];
-    }
-    onUpdateFloor(floor.id,newBoxes,dr.fromFloorId,dr.box.id);
-    dragRef.current=null;setDragOver(false);
-  }
-
-  function dropOnStack(targetBoxId,fid){
-    const dr=dragRef.current;
-    if(!dr||dr.box.id===targetBoxId)return;
-    const targetBox=floor.boxes.find(b=>b.id===targetBoxId);
-    if(!targetBox)return;
-    const existingStackBoxes=targetBox.stackId?floor.boxes.filter(b=>b.stackId===targetBox.stackId):[];
-    if(existingStackBoxes.length>=10){alert("Máximo de 10 caixas por pilha!");return;}
-    const stackId=targetBox.stackId||genId();
-    const maxOrder=existingStackBoxes.reduce((m,b)=>Math.max(m,b.stackOrder||0),0);
-    let newBoxes=floor.boxes.filter(b=>b.id!==dr.box.id);
-    if(!targetBox.stackId) newBoxes=newBoxes.map(b=>b.id===targetBoxId?{...b,stackId,stackOrder:0}:b);
-    const newBox={...dr.box,stackId,stackOrder:maxOrder+1};
-    // if coming from same floor add it; otherwise it'll be added via onUpdateFloor
-    if(dr.fromFloorId===floor.id) newBoxes=[...newBoxes,newBox];
-    onUpdateFloor(floor.id,dr.fromFloorId===floor.id?newBoxes:[...newBoxes,newBox],dr.fromFloorId,dr.box.id,{...newBox});
-    dragRef.current=null;
-  }
-
-  const scrollRef=useRef(null);
-  const touchStartX=useRef(0);
-  const touchScrollLeft=useRef(0);
-  const isDraggingScroll=useRef(false);
-
-  function onTouchStart(e){
-    if(dragRef.current)return; // don't hijack box drag
-    touchStartX.current=e.touches[0].clientX;
-    touchScrollLeft.current=(scrollRef.current?scrollRef.current.scrollLeft:0)||0;
-    isDraggingScroll.current=false;
-  }
-  function onTouchMove(e){
-    if(dragRef.current)return;
-    const dx=touchStartX.current-e.touches[0].clientX;
-    if(Math.abs(dx)>6){isDraggingScroll.current=true;}
-    if(isDraggingScroll.current&&scrollRef.current){
-      scrollRef.current.scrollLeft=touchScrollLeft.current+dx;
+      // Place standalone in empty slot
+      var newBox2 = Object.assign({}, draggedBox, {stackId: null, stackOrder: 0, slotIndex: slotIdx});
+      var newBoxes2;
+      if(dr.fromFloorId === floor.id) {
+        newBoxes2 = floor.boxes.map(function(b){ return b.id===draggedBox.id ? newBox2 : b; });
+      } else {
+        newBoxes2 = floor.boxes.concat([newBox2]);
+      }
+      onUpdateFloor(floor.id, newBoxes2, dr.fromFloorId, draggedBox.id, newBox2);
     }
   }
 
-  const [dropZoneOver,setDropZoneOver]=useState(false);
-
-  return React.createElement("div",{
-    ref:scrollRef,
-    onTouchStart,onTouchMove,
-    className:dragOver?"floor-drop-active":"",
-    style:{
-      display:"flex",overflowX:"auto",gap:10,
-      padding:"8px 4px 12px",minHeight:88,alignItems:"flex-end",
-      transition:"border-color .15s,background .15s",
-      WebkitOverflowScrolling:"touch",
-      cursor:"grab",
+  return React.createElement("div", {
+    ref: scrollRef,
+    onTouchStart: onTouchStart,
+    onTouchMove: onTouchMove,
+    style: {
+      display: "flex",
+      overflowX: "auto",
+      gap: GAP,
+      padding: "8px 4px 14px",
+      minHeight: SLOT_H + 22,
+      WebkitOverflowScrolling: "touch",
     }
   },
-    floor.boxes.length===0&&React.createElement("span",{style:{fontSize:11,color:C.dim,alignSelf:"center",paddingLeft:4}},"Vazio - toque em + para adicionar"),
-    groups.map((group,gi)=>React.createElement(StackColumn,{
-      key:group[0].id+gi,
-      group,mascot,products,
-      onClickBox,
-      dragRef,draggingId,setDraggingId,
-      floorId:floor.id,
-      onDropOnStack:dropOnStack,
-    })),
-    // Invisible drop zone at end - drag here to place box standalone
-    React.createElement("div",{
-      onDragOver:e=>{e.preventDefault();e.stopPropagation();setDropZoneOver(true);setDragOver(false);},
-      onDragLeave:()=>setDropZoneOver(false),
-      onDrop:e=>{e.preventDefault();e.stopPropagation();setDropZoneOver(false);dropOnFloor();},
-      style:{
-        flexShrink:0,width:dropZoneOver?90:40,minHeight:88,
-        border:dropZoneOver?"2px dashed #1dd1a1":"2px dashed rgba(255,255,255,0.08)",
-        borderRadius:10,
-        background:dropZoneOver?"rgba(29,209,161,0.08)":"transparent",
-        display:"flex",alignItems:"center",justifyContent:"center",
-        transition:"all 0.15s",
-        alignSelf:"stretch",
-      }
-    },dropZoneOver&&React.createElement("span",{style:{fontSize:10,color:"#1dd1a1",fontWeight:600}},"Soltar aqui"))
+    slots.map(function(group, slotIdx) {
+      var isOver = dragOverSlot === slotIdx;
+      return React.createElement("div", {
+        key: slotIdx,
+        onDragOver: function(e){ e.preventDefault(); e.stopPropagation(); setDragOverSlot(slotIdx); },
+        onDragLeave: function(){ setDragOverSlot(-1); },
+        onDrop: function(e){ e.preventDefault(); e.stopPropagation(); dropOnSlot(slotIdx); },
+        style: {
+          flexShrink: 0,
+          width: SLOT_W,
+          height: group ? (90 + (group.length-1)*32) : SLOT_H,
+          minHeight: SLOT_H,
+          border: isOver ? "2px dashed #1dd1a1" : (group ? "none" : "1px dashed rgba(255,255,255,0.07)"),
+          borderRadius: 12,
+          background: isOver ? "rgba(29,209,161,0.06)" : "transparent",
+          position: "relative",
+          transition: "border-color 0.15s, background 0.15s",
+        }
+      },
+        group && React.createElement(StackColumn, {
+          group: group,
+          mascot: mascot,
+          products: products,
+          onClickBox: onClickBox,
+          dragRef: dragRef,
+          draggingId: draggingId,
+          setDraggingId: setDraggingId,
+          floorId: floor.id,
+          onDropOnStack: function(targetBoxId) { dropOnSlot(slotIdx); }
+        }),
+        !group && isOver && React.createElement("div", {
+          style: {
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, color: "#1dd1a1", fontWeight: 600
+          }
+        }, "Soltar aqui")
+      );
+    })
   );
 }
 
