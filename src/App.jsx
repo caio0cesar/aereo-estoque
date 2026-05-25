@@ -309,8 +309,8 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
 
   return React.createElement("div",{
     style:{position:"relative",width:116,flexShrink:0,height:colHeight,marginRight:6},
-    onDragOver:e=>{e.preventDefault();e.stopPropagation();},
-    onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current)onDropOnStack(group[0].id,floorId);}
+    onDragOver:function(e){e.preventDefault();},
+    onDrop:function(e){e.preventDefault();e.stopPropagation();if(dragRef.current)onDropOnStack(group[0].id,floorId);}
   },
     // Render from last to first so group[0] (front) is painted on top
     [...group].reverse().map((box,ri)=>{
@@ -325,8 +325,9 @@ function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDra
       return React.createElement("div",{
         key:box.id,
         draggable:true,
-        onDragStart:function(e){dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);},
+        onDragStart:function(e){dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);e.dataTransfer.effectAllowed="move";},
         onDragEnd:function(){dragRef.current=null;setDraggingId(null);},
+        onDragOver:function(e){e.preventDefault();e.dataTransfer.dropEffect="move";},
         onMouseEnter:function(){setHovered(i);},
         onMouseLeave:function(){setHovered(-1);},
         onTouchStart:function(e){
@@ -535,8 +536,8 @@ function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggi
       return React.createElement("div", {
         key: slotIdx,
         "data-slotidx": slotIdx,
-        onDragOver: function(e){ e.preventDefault(); e.stopPropagation(); setDragOverSlot(slotIdx); },
-        onDragLeave: function(){ setDragOverSlot(-1); },
+        onDragOver: function(e){ e.preventDefault(); e.dataTransfer.dropEffect="move"; setDragOverSlot(slotIdx); },
+        onDragLeave: function(e){ if(!e.currentTarget.contains(e.relatedTarget)){setDragOverSlot(-1);} },
         onDrop: function(e){ e.preventDefault(); e.stopPropagation(); dropOnSlot(slotIdx); },
         style: {
           flexShrink: 0,
