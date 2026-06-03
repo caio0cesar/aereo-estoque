@@ -163,6 +163,8 @@ function getStackGroups(boxes) {
   return order.map(key=>stacks[key].sort((a,b_)=>(a.stackOrder||0)-(b_.stackOrder||0)));
 }
 
+const DUCK_SVG = React.createElement("img",{src:"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJiIiBjeD0iNDAlIiBjeT0iMzUlIiByPSI2MCI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0ZGRTk2MCIvPjxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjRkZEMjAwIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRThBODAwIi8+PC9yYWRpYWxHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9ImgiIGN4PSIzOCUiIGN5PSIzMCUiIHI9IjU1Ij48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjRkZGMEEwIi8+PHN0b3Agb2Zmc2V0PSI1NSUiIHN0b3AtY29sb3I9IiNGRkQyMDAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNFOEE4MDAiLz48L3JhZGlhbEdyYWRpZW50PjwvZGVmcz48cGF0aCBkPSJNMjUgMTU1IFE0MCAxNDggNTUgMTU0IFE3MCAxNjAgODUgMTUzIFExMDAgMTQ3IDExNSAxNTMgUTEzMCAxNTkgMTQ1IDE1MyBRMTYwIDE0NyAxNzUgMTU0IiBzdHJva2U9IiM1REQ0RjAiIHN0cm9rZS13aWR0aD0iMy41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuOSIvPjxwYXRoIGQ9Ik0yMCAxNjIgUTM4IDE1NSA1OCAxNjEgUTc4IDE2NyA5OCAxNjAgUTExOCAxNTQgMTM4IDE2MSBRMTU4IDE2OCAxNzggMTYxIiBzdHJva2U9IiMyOUE4RDQiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuOCIvPjxwYXRoIGQ9Ik00MCAxNTggUTYwIDE1MCAxMDAgMTUxIFExNDAgMTUwIDE2MCAxNTggUTE2NSAxNzUgMTAwIDE3OCBRMTM1IDE3NSA0MCAxNThaIiBmaWxsPSIjMjlBOEQ0IiBvcGFjaXR5PSIwLjMiLz48cGF0aCBkPSJNNDggMTQwIFE0MiAxMTggNDggMTAyIFE1NSA4NiA3MiA4MCBRODUgNzYgOTggNzggUTEyMCA3OCAxMzggOTAgUTE1NiAxMDMgMTU4IDEyMiBRMTYwIDE0MiAxNDggMTUyIFExMzAgMTYyIDEwMCAxNjMgUTY4IDE2MyA1MiAxNTMgUTQ2IDE0NyA0OCAxNDBaIiBmaWxsPSJ1cmwoI2IpIiBzdHJva2U9IiNDODgwMDAiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHBhdGggZD0iTTkwIDExOCBRMTA4IDEwOCAxMzIgMTE0IFExNDggMTIwIDE0OCAxMzUgUTEzMiAxNDUgMTEyIDE0MiBROTIgMTM4IDg4IDEyOCBRODcgMTIyIDkwIDExOFoiIGZpbGw9IiNGRkIzMDAiIHN0cm9rZT0iI0MwODAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE1MiAxMTggUTE2OCAxMDggMTcyIDExOCBRMTcwIDEzMCAxNTggMTMyWiIgZmlsbD0iI0ZGRDIWMCIKIHN0cm9rZT0iI0M4ODAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1IDgyIFE3MiA2OCA3NiA1OCBRODIgNTIgOTAgNTQgUTk2IDU2IDk1IDY4IFE5NCA3OCA4OCA4MloiIGZpbGw9IiNGRkQyMDAiIHN0cm9rZT0iI0M4ODAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iODIiIGN5PSI0NCIgcj0iMzIiIGZpbGw9InVybCgjaCkiIHN0cm9rZT0iI0M4ODAwMCIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48ZWxsaXBzZSBjeD0iNzAiIGN5PSIzMCIgcng9IjEyIiByeT0iOCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJyb3RhdGUoLTI1IDcwIDMwKSIvPjxjaXJjbGUgY3g9IjcwIiBjeT0iNDAiIHI9IjkiIGZpbGw9IndoaXRlIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMS41Ii8+PGNpcmNsZSBjeD0iNjkiIGN5PSI0MSIgcj0iNiIgZmlsbD0iIzFhMWExYSIvPjxjaXJjbGUgY3g9IjY2IiBjeT0iMzgiIHI9IjIuNSIgZmlsbD0id2hpdGUiLz48ZWxsaXBzZSBjeD0iNjAiIGN5PSI0OCIgcng9IjciIHJ5PSI0LjUiIGZpbGw9IiNGRkIzQjMiIG9wYWNpdHk9IjAuNDUiLz48cGF0aCBkPSJNNDggNDYgUTM4IDQ0IDM0IDUwIFEzNiA1NyA0OCA1NiBMNTYgNTBaIiBmaWxsPSIjRkY3NzAwIiBzdHJva2U9IiNEMDUwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik04MiAxMyBRNzYgNCA4NCAyIFE5MSA0IDg4IDEzWiIgZmlsbD0iI0ZGRDIWMCIKIHN0cm9rZT0iI0M4ODAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cGF0aCBkPSJNODggMTEgUTgzIDIgOTAgMCBROTcgMiA5NCAxMVoiIGZpbGw9IiNGRkU0MCIgc3Ryb2tlPSIjQzg4MDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPjxwYXRoIGQ9Ik05NCAxMyBROTAgNCA5NyAzIFExMDQgNSAxMDAgMTRaIiBmaWxsPSIjRkZEMjAwIiBzdHJva2U9IiNDODgwMDAiIHN0cm9rZS13aWR0aD0iMS41Ii8+PC9zdmc+",style:{width:"100%",height:"100%",objectFit:"contain"}});
+
 const INITIAL = {
   sectors:[
     {id:"sec1",name:"Tintas e Acabamentos",mascot:"🎨"},
@@ -171,37 +173,77 @@ const INITIAL = {
     {id:"sec4",name:"Material Elétrico",mascot:"⚡"},
     {id:"sec5",name:"Pisos e Revestimentos",mascot:"🏠"},
   ],
-  products:{
-    "1026780":{sku:"1026780",desc:"Mang. Multi Uso 3/8x4.0 Transp Rolo 50M",familia:"Acessórios Hidráulicos",fornecedor:"Force Line",um:"M",preco:"9.73",dtaInicio:"03/06/2025",dtaFim:"31/12/9999",ean:"7899018416919",situacao:"NN"},
-    "1024256":{sku:"1024256",desc:"Reg. Esf. 440 DN28",familia:"Hidráulica",fornecedor:"Krona",um:"UN",preco:"",dtaInicio:"",dtaFim:"",ean:"",situacao:"NN"},
-  },
-  corridors:[
-    {id:"c41",sectorId:"sec1",number:41,bays:[
-      {id:"c41b1e",number:1,side:"Esquerdo",label:"Tintas Látex",floors:[
-        {id:"f3a",number:3,boxes:[
-          {id:"bx1",sku:"1026780",qty:8,updatedBy:"Caio",date:"05/05/2025",validade:"",stackId:"stk1",stackOrder:0},
-          {id:"bx1b",sku:"1024256",qty:4,updatedBy:"Caio",date:"05/05/2025",validade:"",stackId:"stk1",stackOrder:1},
-          {id:"bx1c",sku:"1026780",qty:3,updatedBy:"Caio",date:"06/05/2025",validade:"",stackId:null,stackOrder:0},
-        ]},
-        {id:"f2a",number:2,boxes:[{id:"bx2",sku:"1024276",qty:10,updatedBy:"Caio",date:"11/05/2025",validade:"",stackId:null,stackOrder:0}]},
-        {id:"f1a",number:1,boxes:[]}
-      ]},
-      {id:"c41b1d",number:1,side:"Direito",label:"Rolos e Pincéis",floors:[{id:"f2b",number:2,boxes:[]},{id:"f1b",number:1,boxes:[]}]},
-    ]},
-    {id:"c44",sectorId:"sec2",number:44,bays:[
-      {id:"c44b1e",number:1,side:"Esquerdo",label:"Bases e Registros",floors:[
-        {id:"f2d",number:2,boxes:[{id:"bx3",sku:"1024256",qty:20,updatedBy:"Caio",date:"11/03/2025",validade:"",stackId:null,stackOrder:0}]},
-        {id:"f1e",number:1,boxes:[
-          {id:"bx4",sku:"1024274",qty:6,updatedBy:"Caio",date:"22/03/2025",validade:"",stackId:"stk2",stackOrder:0},
-          {id:"bx5",sku:"1798178",qty:58,updatedBy:"Caio",date:"22/03/2025",validade:"",stackId:"stk2",stackOrder:1}
-        ]}
-      ]},
-    ]},
-    {id:"c42",sectorId:"sec3",number:42,bays:[{id:"c42b1e",number:1,side:"Esquerdo",label:"Chaves",floors:[{id:"f1h",number:1,boxes:[]}]}]},
-    {id:"c43",sectorId:"sec4",number:43,bays:[{id:"c43b1e",number:1,side:"Esquerdo",label:"Disjuntores",floors:[{id:"f1i",number:1,boxes:[]}]}]},
-    {id:"c45",sectorId:"sec5",number:45,bays:[{id:"c45b1e",number:1,side:"Esquerdo",label:"Porcelanatos",floors:[{id:"f1j",number:1,boxes:[]}]}]},
-  ]
+  products:{},
+  corridors:[],
 };
+
+function DuckIcon({size}){
+  var s = size || 40;
+  return React.createElement("svg",{width:s,height:s,viewBox:"0 0 200 200",xmlns:"http://www.w3.org/2000/svg"},
+    React.createElement("defs",null,
+      React.createElement("radialGradient",{id:"duckBody",cx:"40%",cy:"35%",r:"60%"},
+        React.createElement("stop",{offset:"0%",stopColor:"#FFF176"}),
+        React.createElement("stop",{offset:"55%",stopColor:"#FFD600"}),
+        React.createElement("stop",{offset:"100%",stopColor:"#E8A000"})
+      ),
+      React.createElement("radialGradient",{id:"duckHead",cx:"35%",cy:"28%",r:"55%"},
+        React.createElement("stop",{offset:"0%",stopColor:"#FFFDE0"}),
+        React.createElement("stop",{offset:"50%",stopColor:"#FFD600"}),
+        React.createElement("stop",{offset:"100%",stopColor:"#E8A000"})
+      ),
+      React.createElement("radialGradient",{id:"duckShine",cx:"30%",cy:"25%",r:"50%"},
+        React.createElement("stop",{offset:"0%",stopColor:"white",stopOpacity:"0.7"}),
+        React.createElement("stop",{offset:"100%",stopColor:"white",stopOpacity:"0"})
+      )
+    ),
+    // Water
+    React.createElement("path",{d:"M15 158 Q35 148 60 155 Q85 162 110 154 Q135 147 160 155 Q178 160 185 156",stroke:"#4DB8E8",strokeWidth:"3",fill:"none",strokeLinecap:"round",opacity:"0.9"}),
+    React.createElement("path",{d:"M10 166 Q35 157 65 163 Q95 169 120 162 Q148 155 170 163 Q182 168 190 164",stroke:"#2196C8",strokeWidth:"2.5",fill:"none",strokeLinecap:"round",opacity:"0.8"}),
+    React.createElement("path",{d:"M10 172 Q40 164 70 170 Q100 176 130 169 Q158 163 185 170",stroke:"#1A7AAA",strokeWidth:"2",fill:"none",strokeLinecap:"round",opacity:"0.7"}),
+    React.createElement("path",{d:"M38 157 Q70 148 105 149 Q140 148 163 157 Q168 175 105 179 Q42 178 38 157Z",fill:"#2196C8",opacity:"0.25"}),
+    // Body
+    React.createElement("path",{d:"M42 142 Q36 118 44 100 Q52 82 70 76 Q84 71 100 72 Q124 72 142 86 Q160 100 161 122 Q162 144 148 155 Q128 165 100 165 Q65 165 50 154 Q43 148 42 142Z",fill:"url(#duckBody)",stroke:"#C07800",strokeWidth:"2.5"}),
+    // Body shine
+    React.createElement("ellipse",{cx:"80",cy:"105",rx:"22",ry:"14",fill:"url(#duckShine)",transform:"rotate(-20 80 105)"}),
+    // Wing
+    React.createElement("path",{d:"M88 120 Q108 110 135 116 Q152 123 150 138 Q132 148 110 145 Q88 140 86 130 Q85 124 88 120Z",fill:"#FFCA00",stroke:"#C07800",strokeWidth:"2"}),
+    React.createElement("ellipse",{cx:"118",cy:"130",rx:"18",ry:"9",fill:"url(#duckShine)",transform:"rotate(-10 118 130)"}),
+    // Tail
+    React.createElement("path",{d:"M154 115 Q172 103 175 116 Q172 130 160 132Z",fill:"#FFD600",stroke:"#C07800",strokeWidth:"2"}),
+    React.createElement("path",{d:"M158 108 Q178 95 180 110 Q177 124 164 125Z",fill:"#FFE040",stroke:"#C07800",strokeWidth:"1.5"}),
+    // Neck
+    React.createElement("path",{d:"M72 78 Q68 62 73 50 Q80 43 90 46 Q98 49 96 63 Q94 75 86 79Z",fill:"#FFD600",stroke:"#C07800",strokeWidth:"2"}),
+    // Head
+    React.createElement("circle",{cx:"80",cy:"42",r:"33",fill:"url(#duckHead)",stroke:"#C07800",strokeWidth:"2.5"}),
+    // Head shine
+    React.createElement("ellipse",{cx:"67",cy:"27",rx:"14",ry:"9",fill:"white",opacity:"0.35",transform:"rotate(-25 67 27)"}),
+    // Eye white
+    React.createElement("circle",{cx:"68",cy:"37",r:"10",fill:"white",stroke:"#333",strokeWidth:"1.5"}),
+    // Eye pupil
+    React.createElement("circle",{cx:"67",cy:"37",r:"6.5",fill:"#111"}),
+    // Eye shine
+    React.createElement("circle",{cx:"63",cy:"33",r:"3.5",fill:"white"}),
+    React.createElement("circle",{cx:"71",cy:"42",r:"1.5",fill:"white",opacity:"0.6"}),
+    // Eyelid
+    React.createElement("path",{d:"M59 32 Q68 27 78 32",stroke:"#A06000",strokeWidth:"1.8",fill:"none",strokeLinecap:"round"}),
+    // Beak upper
+    React.createElement("path",{d:"M46 44 Q34 41 28 48 Q30 57 46 55 L57 48Z",fill:"#FF6800",stroke:"#CC4400",strokeWidth:"2"}),
+    // Beak lower
+    React.createElement("path",{d:"M46 55 Q34 54 30 57 Q33 63 46 60 L55 54Z",fill:"#FF5500",stroke:"#CC4400",strokeWidth:"1.5"}),
+    // Beak shine
+    React.createElement("ellipse",{cx:"38",cy:"46",rx:"5",ry:"2.5",fill:"white",opacity:"0.3",transform:"rotate(-10 38 46)"}),
+    // Forehead tufts
+    React.createElement("path",{d:"M80 10 Q74 0 82 -2 Q90 0 87 10Z",fill:"#FFD600",stroke:"#C07800",strokeWidth:"1.5"}),
+    React.createElement("path",{d:"M87 9 Q82 -1 90 -3 Q98 -1 94 9Z",fill:"#FFE040",stroke:"#C07800",strokeWidth:"1.5"}),
+    React.createElement("path",{d:"M93 11 Q89 1 97 0 Q104 2 100 11Z",fill:"#FFD600",stroke:"#C07800",strokeWidth:"1.5"}),
+    // Water splash
+    React.createElement("path",{d:"M40 154 Q30 144 32 137 Q35 144 42 152Z",fill:"#4DB8E8",opacity:"0.7"}),
+    React.createElement("path",{d:"M160 153 Q170 143 168 136 Q165 144 158 152Z",fill:"#4DB8E8",opacity:"0.6"}),
+    React.createElement("path",{d:"M56 160 Q50 152 46 156 Q49 161 57 165Z",fill:"white",opacity:"0.5"}),
+    React.createElement("path",{d:"M145 159 Q151 151 154 155 Q151 161 144 164Z",fill:"white",opacity:"0.4"})
+  );
+}
+
 
 const C={bg:"#071e26",border:"rgba(255,255,255,0.1)",accent:"#1dd1a1",accentDim:"rgba(29,209,161,0.13)",text:"#e4f5f0",muted:"#6aada0",dim:"#3f7068",danger:"#ff6b6b",modalBg:"#0b2533"};
 
@@ -212,10 +254,11 @@ async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");
 
 // --- LOGIN SCREEN -------------------------------------------------------------
 function LoginScreen({onLogin}){
-  const [email,setEmail]=useState("");
-  const [password,setPassword]=useState("");
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState("");
+  var [email,setEmail]=useState("");
+  var [password,setPassword]=useState("");
+  var [loading,setLoading]=useState(false);
+  var [error,setError]=useState("");
+  var [focused,setFocused]=useState("");
 
   async function handleLogin(){
     if(!email||!password){setError("Preencha email e senha.");return;}
@@ -224,28 +267,137 @@ function LoginScreen({onLogin}){
       await signIn(email,password);
       onLogin();
     }catch(e){
-      setError(e.message||"Erro ao fazer login.");
+      setError(e.message||"Email ou senha incorretos.");
     }finally{setLoading(false);}
   }
 
-  return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}},
-    React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📦"),
-    React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:4,color:C.text}},"Estoque Aéreo"),
-    React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:32}},"Faça login para continuar"),
-    React.createElement("div",{style:{width:"100%",maxWidth:340}},
-      error&&React.createElement("div",{style:{background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.3)",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger}},error),
-      React.createElement(Lbl,null,"Email"),
-      React.createElement("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),placeholder:"seu@email.com",style:{marginBottom:12}}),
-      React.createElement(Lbl,null,"Senha"),
-      React.createElement("input",{type:"password",value:password,onChange:e=>setPassword(e.target.value),placeholder:"••••••••",style:{marginBottom:20},onKeyDown:e=>{if(e.key==="Enter")handleLogin();}}),
-      React.createElement("button",{onClick:handleLogin,disabled:loading,style:{background:loading?"rgba(29,209,161,0.5)":C.accent,color:"#071e26",border:"none",borderRadius:10,padding:14,fontWeight:800,fontSize:15,width:"100%",cursor:loading?"not-allowed":"pointer"}},
-        loading?"Entrando...":"Entrar"
+  var loginCSS = "@keyframes floatDuck{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}"+
+    "@keyframes ripple{0%{transform:scale(0.8);opacity:0.6}100%{transform:scale(2.2);opacity:0}}"+
+    "@keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}"+
+    "@keyframes shimmer{0%,100%{opacity:0.5}50%{opacity:1}}"+
+    ".login-duck{animation:floatDuck 3s ease-in-out infinite;}"+
+    ".login-ripple{animation:ripple 2.5s ease-out infinite;}"+
+    ".login-ripple2{animation:ripple 2.5s ease-out infinite 0.8s;}"+
+    ".login-ripple3{animation:ripple 2.5s ease-out infinite 1.6s;}"+
+    ".login-card{animation:fadeSlideUp 0.4s ease;}"+
+    ".login-shimmer{animation:shimmer 2s ease-in-out infinite;}";
+
+  return React.createElement("div",{style:{
+    background:"linear-gradient(160deg,#051820 0%,#071e26 40%,#0a2d38 100%)",
+    minHeight:"100vh",display:"flex",flexDirection:"column",
+    alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden"
+  }},
+    React.createElement("style",null,loginCSS),
+
+    // Background decorative circles
+    React.createElement("div",{style:{position:"absolute",inset:0,pointerEvents:"none"}},
+      React.createElement("div",{style:{position:"absolute",top:"10%",left:"5%",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(29,209,161,0.06) 0%,transparent 70%)"}}),
+      React.createElement("div",{style:{position:"absolute",bottom:"15%",right:"8%",width:280,height:280,borderRadius:"50%",background:"radial-gradient(circle,rgba(29,209,161,0.04) 0%,transparent 70%)"}}),
+      React.createElement("div",{style:{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(29,209,161,0.03) 0%,transparent 70%)"}})
+    ),
+
+    // Duck animation with water ripples
+    React.createElement("div",{style:{position:"relative",marginBottom:32,display:"flex",flexDirection:"column",alignItems:"center"}},
+      // Ripple circles
+      React.createElement("div",{style:{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:80,height:20}},
+        React.createElement("div",{className:"login-ripple",style:{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(29,209,161,0.4)"}}),
+        React.createElement("div",{className:"login-ripple2",style:{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(29,209,161,0.3)"}}),
+        React.createElement("div",{className:"login-ripple3",style:{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(29,209,161,0.2)"}})
+      ),
+      // Duck
+      React.createElement("div",{className:"login-duck"},
+        React.createElement(DuckIcon,{size:90})
       )
-    )
+    ),
+
+    // Welcome text
+    React.createElement("div",{className:"login-card",style:{textAlign:"center",marginBottom:32}},
+      React.createElement("div",{style:{fontSize:13,color:"#1dd1a1",fontWeight:700,letterSpacing:"0.15em",marginBottom:8,textTransform:"uppercase"}},"Estoque Aéreo"),
+      React.createElement("div",{style:{fontSize:26,fontWeight:800,color:"#e4f5f0",lineHeight:1.2,marginBottom:6}},
+        "Bem Vindo,"),
+      React.createElement("div",{style:{fontSize:26,fontWeight:800,color:"#1dd1a1",lineHeight:1.2}},
+        "Operador! 👋"),
+      React.createElement("div",{style:{fontSize:13,color:"#3f7068",marginTop:10}},"Faça login para continuar")
+    ),
+
+    // Login card
+    React.createElement("div",{className:"login-card",style:{
+      width:"100%",maxWidth:360,
+      background:"rgba(255,255,255,0.04)",
+      border:"1px solid rgba(255,255,255,0.08)",
+      borderRadius:20,padding:24,
+      backdropFilter:"blur(10px)",
+    }},
+      error&&React.createElement("div",{style:{
+        background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.25)",
+        borderRadius:10,padding:"10px 14px",marginBottom:16,
+        fontSize:13,color:"#ff6b6b",textAlign:"center"
+      }},error),
+
+      // Email field
+      React.createElement("div",{style:{marginBottom:14}},
+        React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"EMAIL"),
+        React.createElement("div",{style:{position:"relative"}},
+          React.createElement("input",{
+            type:"email",value:email,
+            onChange:function(e){setEmail(e.target.value);setError("");},
+            onFocus:function(){setFocused("email");},
+            onBlur:function(){setFocused("");},
+            onKeyDown:function(e){if(e.key==="Enter")handleLogin();},
+            placeholder:"seu@email.com",
+            style:{
+              background:focused==="email"?"rgba(29,209,161,0.06)":"rgba(255,255,255,0.05)",
+              border:"1px solid "+(focused==="email"?"rgba(29,209,161,0.5)":"rgba(255,255,255,0.1)"),
+              borderRadius:12,padding:"12px 16px",color:"#e4f5f0",
+              fontSize:14,width:"100%",outline:"none",
+              transition:"all 0.2s",
+            }
+          })
+        )
+      ),
+
+      // Password field
+      React.createElement("div",{style:{marginBottom:24}},
+        React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"SENHA"),
+        React.createElement("input",{
+          type:"password",value:password,
+          onChange:function(e){setPassword(e.target.value);setError("");},
+          onFocus:function(){setFocused("password");},
+          onBlur:function(){setFocused("");},
+          onKeyDown:function(e){if(e.key==="Enter")handleLogin();},
+          placeholder:"••••••••",
+          style:{
+            background:focused==="password"?"rgba(29,209,161,0.06)":"rgba(255,255,255,0.05)",
+            border:"1px solid "+(focused==="password"?"rgba(29,209,161,0.5)":"rgba(255,255,255,0.1)"),
+            borderRadius:12,padding:"12px 16px",color:"#e4f5f0",
+            fontSize:14,width:"100%",outline:"none",
+            transition:"all 0.2s",
+          }
+        })
+      ),
+
+      // Login button
+      React.createElement("button",{
+        onClick:handleLogin,
+        disabled:loading,
+        style:{
+          background:loading?"rgba(29,209,161,0.4)":"linear-gradient(135deg,#1dd1a1,#17a880)",
+          color:"#071e26",border:"none",borderRadius:12,
+          padding:"14px",fontWeight:800,fontSize:15,
+          width:"100%",cursor:loading?"not-allowed":"pointer",
+          boxShadow:loading?"none":"0 4px 20px rgba(29,209,161,0.3)",
+          transition:"all 0.2s",letterSpacing:"0.02em",
+        }
+      },loading?"Entrando...":"Entrar")
+    ),
+
+    // Footer
+    React.createElement("div",{style:{marginTop:24,fontSize:11,color:"#2a5a50",textAlign:"center"}},
+      "Estoque Aéreo v1.0")
   );
 }
 
-// --- PRIMITIVES ---------------------------------------------------------------
+
 function Lbl({children,req}){return React.createElement("label",{style:{fontSize:12,color:C.muted,fontWeight:600,display:"block",marginBottom:4}},children,req&&React.createElement("span",{style:{color:C.accent}}," *"));}
 function Gap({h=12}){return React.createElement("div",{style:{height:h}});}
 function Tag({children,color=C.accent,bg=C.accentDim}){return React.createElement("span",{style:{background:bg,color,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}},children);}
@@ -1032,7 +1184,7 @@ function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCor
     setCorridorModal(null);
   }
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
-    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},sector.mascot),
+    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,opacity:0.06,pointerEvents:"none",zIndex:0}},sector.name==="Hidráulica"?React.createElement(DuckIcon,{size:90}):React.createElement("div",{style:{fontSize:90,lineHeight:1}},sector.mascot)),
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1}},
@@ -1113,7 +1265,7 @@ function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSea
               });},style:{background:"none",border:"1px solid rgba(255,107,107,0.2)",color:C.danger,borderRadius:6,padding:"2px 6px",fontSize:10}},"🗑")
             ),
             React.createElement("div",{onClick:()=>onSelectSector(sector.id),className:"ch",style:{padding:"4px 14px 16px",cursor:"pointer",textAlign:"center"}},
-              React.createElement("div",{style:{fontSize:40,marginBottom:8,lineHeight:1}},sector.mascot),
+              React.createElement("div",{style:{width:48,height:48,marginBottom:8}},sector.name==="Hidráulica"?React.createElement(DuckIcon,{size:48}):React.createElement("div",{style:{fontSize:40,lineHeight:1}},sector.mascot)),
               React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:4,color:C.text,lineHeight:1.3}},sector.name),
               React.createElement("div",{style:{fontSize:10,color:C.dim}},secCors.length+" corr. · "+totalBoxes+" cx.")
             )
