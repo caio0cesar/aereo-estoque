@@ -3,8 +3,8 @@ import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
 import { HomeScreen, SectorScreen, BayScreen } from "./components/NavScreens.jsx";
 import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/Screens.jsx";
-import { getSession, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.js";
-import { genId, parsePrice, renumberFloors, toISO } from "./utils/dates.js";
+import { getSession, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.jsx";
+import { genId, parsePrice, renumberFloors, toISO } from "./utils/dates.jsx";
 
 const INITIAL = {
   sectors:[
