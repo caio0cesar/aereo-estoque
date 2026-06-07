@@ -1,4 +1,4 @@
-import { fromISO } from "../utils/dates.jsx";
+import { fromISO } from "../utils/dates";
 
 const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
 
