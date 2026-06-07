@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { C, Modal, Lbl, Gap, Row, NumInput, DateInput, SaveBtn, Tag } from "./shared.jsx";
-import { getValidity } from "../utils/validity.js";
-import { todayFull, calcVenc, parsePrice } from "../utils/dates.js";
+import { getValidity } from "../utils/validity.jsx";
+import { todayFull, calcVenc, parsePrice } from "../utils/dates.jsx";
 
 export function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations}){
   const vi=getValidity(box.validade);
