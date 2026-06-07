@@ -2,9 +2,9 @@ import React, { useState, useRef } from "react";
 import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon } from "./shared.jsx";
 import FloorRow from "./FloorRow.jsx";
 import { BoxDetailModal, BoxEditModal } from "./BoxModal.jsx";
-import { getAllExpiring } from "../utils/validity.js";
-import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.js";
-import { db } from "../services/supabase.js";
+import { getAllExpiring } from "../utils/validity.jsx";
+import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.jsx";
+import { db } from "../services/supabase.jsx";
 
 // --- Modais simples ---
 function BayModal({bay,side,onSave,onClose}){
