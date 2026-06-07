@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import StackColumn from "./StackColumn.jsx";
+import StackColumn from "./stackcolumn.jsx";
 
 export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8;
