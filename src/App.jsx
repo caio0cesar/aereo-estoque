@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
-import LoginScreen from "./components/LoginScreen.jsx";
-import { HomeScreen, SectorScreen, BayScreen } from "./components/NavScreens.jsx";
-import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/Screens.jsx";
+import LoginScreen from "./components/loginscreen.jsx";
+import { HomeScreen, SectorScreen, BayScreen } from "./components/navscreens.jsx";
+import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/screens.jsx";
 import { getSession, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.jsx";
 import { genId, parsePrice, renumberFloors, toISO } from "./utils/dates.jsx";
 
