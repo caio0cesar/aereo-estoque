@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getValidity } from "../utils/validity.js";
+import { getValidity } from "../utils/validity.jsx";
 
 export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
