@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { signIn, resetPassword } from "../services/supabase.js";
+import { signIn, resetPassword } from "../services/supabase.jsx";
 import { DuckIcon, C } from "./shared.jsx";
-import { todayFull } from "../utils/dates.js";
+import { todayFull } from "../utils/dates.jsx";
 
 async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
 
