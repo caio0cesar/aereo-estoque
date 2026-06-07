@@ -84,7 +84,7 @@ export default function LoginScreen({onLogin}){
       React.createElement("div",{style:{fontSize:26,fontWeight:800,color:"#1dd1a1",lineHeight:1.2}},"Operador! 👋"),
       React.createElement("div",{style:{fontSize:13,color:"#3f7068",marginTop:10}},"Faça login para continuar")
     ),
-    React.createElement("div",{className:"login-card",style:{width:"100%",maxWidth:360,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:24,backdropFilter:"blur(10px)"}},
+    React.createElement("div",{className:"login-card",style:{width:"100%",maxWidth:360,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:24,backdropFilter:"blur(10px)",overflow:"hidden"}},
       !resetMode?(
         React.createElement(React.Fragment,null,
           error&&React.createElement("div",{style:{background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.25)",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#ff6b6b",textAlign:"center"}},error),
