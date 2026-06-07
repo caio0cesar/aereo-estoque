@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { C, Tag, Gap } from "./shared.jsx";
-import ProductModal from "./ProductModal.jsx";
+import ProductModal from "./productmodal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { parsePrice, findBySku } from "../utils/dates.jsx";
 
