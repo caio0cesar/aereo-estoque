@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon } from "./shared.jsx";
-import FloorRow from "./floorrow.jsx";
-import { BoxDetailModal, BoxEditModal } from "./boxmodal.jsx";
+import FloorRow from "./FloorRow.jsx";
+import { BoxDetailModal, BoxEditModal } from "./BoxModal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.jsx";
 import { db } from "../services/supabase.jsx";
@@ -77,11 +77,13 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,hi
   }
 
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
-    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:100,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
+    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,opacity:0.06,pointerEvents:"none",zIndex:0}},
+      corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:100}):React.createElement("div",{style:{fontSize:100,lineHeight:1}},corridor.mascot||"📦")),
     React.createElement("div",{style:{padding:"14px 14px 10px",display:"flex",alignItems:"center",gap:8,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1,minWidth:0}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},(corridor.mascot||"")+" Aéreo - Bay "+bay.number),
+        React.createElement("div",{style:{fontWeight:700,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},
+          corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:18}):React.createElement("span",null,corridor.mascot||"")," Aéreo - Bay "+bay.number),
         React.createElement("div",{style:{fontSize:10,color:C.muted}},bay.side+" · "+bay.label+" · C"+corridor.number)
       ),
       React.createElement(Tag,null,floors.length+" and."),
@@ -136,7 +138,9 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
   function BayCard({bay}){
     const total=bay.floors.reduce((s,f)=>s+f.boxes.length,0);
     return React.createElement("div",{className:"fin",style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
-      React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},corridor.mascot||"📦"),
+      corridor.mascot==="🦆"
+        ?React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,opacity:0.07,pointerEvents:"none"}},React.createElement(DuckIcon,{size:38}))
+        :React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},corridor.mascot||"📦"),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px 6px",borderBottom:"1px solid rgba(255,255,255,0.06)"}},
         React.createElement(Tag,null,"Bay "+bay.number),
         React.createElement("div",{style:{display:"flex",gap:4}},
@@ -156,10 +160,13 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
   }
 
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
-    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},corridor.mascot||"📦"),
+    React.createElement("div",{style:{position:"fixed",bottom:20,right:20,opacity:0.04,pointerEvents:"none",zIndex:0}},
+      corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:90}):React.createElement("div",{style:{fontSize:90,lineHeight:1}},corridor.mascot||"📦")),
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
-      React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:17}},(corridor.mascot||"")+" Corredor "+corridor.number))
+      React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:17,display:"flex",alignItems:"center",gap:6}},
+        corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:20}):React.createElement("span",null,corridor.mascot||""),
+        "Corredor "+corridor.number))
     ),
     React.createElement("div",{style:{padding:14}},
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}},
@@ -199,20 +206,23 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUp
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
       React.createElement("div",{style:{flex:1}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:17}},sector.mascot+" "+sector.name),
+        React.createElement("div",{style:{fontWeight:700,fontSize:17}},
+          sector.mascot==="🦆"?React.createElement(DuckIcon,{size:22}):React.createElement("span",null,sector.mascot)," "+sector.name),
         React.createElement("div",{style:{fontSize:11,color:C.muted}},corridors.length+" corredor(es)")
       ),
       React.createElement("button",{onClick:()=>setCorridorModal({corridor:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12}},"+ Corredor")
     ),
     React.createElement("div",{style:{padding:14}},
       corridors.length===0&&React.createElement("div",{style:{textAlign:"center",padding:"40px 0",color:C.muted}},
-        React.createElement("div",{style:{fontSize:40,marginBottom:12}},sector.mascot),
+        React.createElement("div",{style:{marginBottom:12}},sector.mascot==="🦆"?React.createElement(DuckIcon,{size:40}):React.createElement("div",{style:{fontSize:40}},sector.mascot)),
         React.createElement("div",{style:{fontSize:13}},"Nenhum corredor. Toque em + Corredor.")
       ),
       [...corridors].sort((a,b)=>a.number-b.number).map(cor=>{
         const totalBoxes=cor.bays.reduce((s,b)=>s+b.floors.reduce((s2,f)=>s2+f.boxes.length,0),0);
         return React.createElement("div",{key:cor.id,className:"fin",style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,borderRadius:12,marginBottom:8,overflow:"hidden",position:"relative"}},
-          React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},sector.mascot),
+          sector.mascot==="🦆"
+            ?React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,opacity:0.07,pointerEvents:"none"}},React.createElement(DuckIcon,{size:38}))
+            :React.createElement("div",{style:{position:"absolute",right:-2,bottom:-4,fontSize:38,opacity:0.07,pointerEvents:"none",lineHeight:1}},sector.mascot),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px 6px",borderBottom:"1px solid rgba(255,255,255,0.06)"}},
             React.createElement(Tag,null,"Corredor "+cor.number),
             React.createElement("div",{style:{display:"flex",gap:4}},
