@@ -50,5 +50,5 @@ export function UndoToast({msg,onUndo,onDismiss}){
 }
 
 export function DuckIcon({size=40}){
-  return React.createElement("img",{src:"/duck.png",width:size,height:size,style:{objectFit:"contain"}});
+  return React.createElement("img",{public:"/duck.png",width:size,height:size,style:{objectFit:"contain"}});
 }
