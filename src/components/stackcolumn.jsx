@@ -63,7 +63,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
         }
       },
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
-          mascot==="🦆"?React.createElement(DuckIcon,{size:34}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
+          mascot==="🦆"?React.createElement(DuckIcon,{size:50}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
         ),
         isFront?(
           React.createElement(React.Fragment,null,
