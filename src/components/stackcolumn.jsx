@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { getValidity } from "../utils/validity.jsx";
+import { DuckIcon } from "./shared.jsx";
 
 export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
   const [hovered,setHovered]=useState(-1);
@@ -61,8 +62,8 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           userSelect:"none",
         }
       },
-        React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}},
-          React.createElement("div",{style:{fontSize:34,opacity:0.05,lineHeight:1}},mascot)
+        React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
+          mascot==="🦆"?React.createElement(DuckIcon,{size:34}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
         ),
         isFront?(
           React.createElement(React.Fragment,null,
