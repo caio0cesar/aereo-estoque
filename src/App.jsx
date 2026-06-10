@@ -47,6 +47,19 @@ export default function App(){
   const nav=s=>setScreenStack(st=>[...st,s]);
   const back=()=>setScreenStack(st=>st.length>1?st.slice(0,-1):st);
 
+  async function handleBackup(){
+    try{
+      const local=await loadPersisted();
+      if(!local){alert("Nenhum dado local para backup.");return;}
+      const blob=new Blob([JSON.stringify(local,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      const today=new Date(); const dd=String(today.getDate()).padStart(2,"0"),mm=String(today.getMonth()+1).padStart(2,"0"),yyyy=today.getFullYear();
+      a.href=url; a.download="backup_estoque_"+dd+"-"+mm+"-"+yyyy+".json"; a.click();
+      URL.revokeObjectURL(url);
+    }catch(e){alert("Erro no backup: "+e.message);}
+  }
+
   function registerUndo(msg){
     const snapshot=dataRef.current; if(!snapshot) return;
     if(undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -112,8 +125,8 @@ export default function App(){
       onSelectSector:id=>nav({type:"sector",sectorId:id}),
       onOpenProducts:()=>nav({type:"products"}),
       onOpenValidity:()=>nav({type:"validity"}),
-      onOpenSearch:()=>setShowSearch(true),
       onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,
+      onBackup:handleBackup,
       profile,onLogout:async()=>{await signOut();setSession(null);setProfile(null);setData(null);setScreenStack([{type:"home"}]);},
       ...sharedProps
     }),
