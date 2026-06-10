@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon } from "./shared.jsx";
-import FloorRow from "./floorrow.jsx";
-import { BoxDetailModal, BoxEditModal } from "./boxmodal.jsx";
+import FloorRow from "./FloorRow.jsx";
+import { BoxDetailModal, BoxEditModal } from "./BoxModal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.jsx";
 import { db } from "../services/supabase.jsx";
@@ -247,27 +247,55 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUp
 }
 
 // --- HomeScreen ---
-export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenSearch,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout}){
+export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout,onBackup}){
   const [sectorModal,setSectorModal]=useState(null);
+  const [confirmLogout,setConfirmLogout]=useState(false);
+  const [search,setSearch]=useState("");
   const expiringItems=getAllExpiring(data);
   const hasExpiring=expiringItems.length>0;
+
+  const allBoxSkus=[...new Set((data.corridors||[]).flatMap(c=>c.bays.flatMap(b=>b.floors.flatMap(f=>f.boxes.map(bx=>bx.sku)))))];
+  const products=data.products||{};
+  const term=search.trim();
+  const searchResults=term.length>=2?(()=>{
+    const matchedSkus=new Set();
+    allBoxSkus.forEach(sku=>{if(sku.includes(term))matchedSkus.add(sku);});
+    Object.values(products).forEach(p=>{if(p.desc&&p.desc.toLowerCase().includes(term.toLowerCase()))matchedSkus.add(p.sku);});
+    return[...matchedSkus].map(sku=>({sku,product:products[sku],locations:findBySku(sku,data.corridors)})).filter(r=>r.locations.length>0);
+  })():[];
+
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh",position:"relative"}},
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,fontSize:90,opacity:0.04,pointerEvents:"none",zIndex:0,lineHeight:1}},"📦"),
     React.createElement("div",{style:{padding:"22px 16px 14px",borderBottom:"1px solid "+C.border}},
       React.createElement("div",{style:{fontWeight:800,fontSize:22,marginBottom:4}},"📦 Estoque Aéreo"),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
         React.createElement("div",{style:{fontSize:12,color:C.muted}},profile?"Olá, "+(profile.name||"")+(profile.role==="admin"?" 👑":""):"Toque para explorar"),
-        onLogout&&React.createElement("button",{onClick:onLogout,style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"Sair")
+        React.createElement("div",{style:{display:"flex",gap:6}},
+          onBackup&&React.createElement("button",{onClick:onBackup,style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"💾"),
+          onLogout&&React.createElement("button",{onClick:()=>setConfirmLogout(true),style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"Sair")
+        )
       ),
       React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
         React.createElement("button",{onClick:onOpenProducts,style:{flex:1,background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},"🗂 Produtos"),
         React.createElement("button",{onClick:onOpenValidity,className:hasExpiring?"blink":"",style:{flex:1,background:hasExpiring?"rgba(255,107,107,0.12)":"rgba(255,255,255,0.06)",border:"1px solid "+(hasExpiring?"rgba(255,107,107,0.3)":C.border),color:hasExpiring?C.danger:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},hasExpiring?"⚠️ Validades ("+expiringItems.length+")":"⏰ Validades")
       ),
-      React.createElement("button",{onClick:onOpenSearch,style:{background:"rgba(255,255,255,0.08)",border:"1px solid "+C.border,borderRadius:10,padding:"11px 14px",color:C.dim,fontSize:14,width:"100%",textAlign:"left",display:"flex",alignItems:"center",gap:8}},
-        React.createElement("span",null,"🔍")," Buscar por SKU ou nome..."
+      React.createElement("div",{style:{position:"relative"}},
+        React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"🔍 Buscar por SKU ou nome...",style:{paddingRight:search?36:12}}),
+        search&&React.createElement("button",{onClick:()=>setSearch(""),style:{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.dim,fontSize:16,lineHeight:1}},"✕")
+      ),
+      term.length>=2&&React.createElement("div",{style:{marginTop:8}},
+        searchResults.length===0&&React.createElement("div",{style:{textAlign:"center",padding:"12px 0",color:C.muted,fontSize:12}},"Nenhum resultado para \""+term+"\""),
+        searchResults.map((r,i)=>React.createElement("div",{key:i,className:"fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:10,padding:10,marginBottom:6}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
+            React.createElement(Tag,null,r.sku),
+            React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
+          ),
+          r.product&&r.product.desc&&React.createElement("div",{style:{fontSize:11,color:C.text,marginBottom:4}},r.product.desc),
+          r.locations.map((l,j)=>React.createElement("div",{key:j,style:{fontSize:10,color:C.muted,padding:"2px 0"}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" · Andar "+l.fl.number+" · Qtd: "+l.box.qty))
+        ))
       )
     ),
-    React.createElement("div",{style:{padding:"16px 16px 60px"}},
+    !term&&React.createElement("div",{style:{padding:"16px 16px 60px"}},
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
         React.createElement("div",{style:{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:"0.08em"}},"SETORES"),
         React.createElement("button",{onClick:()=>setSectorModal({sector:null}),style:{background:"none",border:"1px solid "+C.border,color:C.muted,borderRadius:8,padding:"4px 10px",fontSize:11}},"+ Setor")
@@ -292,6 +320,16 @@ export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,on
             )
           );
         })
+      )
+    ),
+    confirmLogout&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.87)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20}},
+      React.createElement("div",{className:"su",style:{background:C.modalBg,border:"1px solid "+C.border,borderRadius:16,padding:24,width:"100%",maxWidth:320,textAlign:"center"}},
+        React.createElement("div",{style:{fontSize:32,marginBottom:10}},"👋"),
+        React.createElement("div",{style:{fontSize:15,fontWeight:600,marginBottom:16,color:C.text}},"Deseja sair?"),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          React.createElement("button",{onClick:()=>setConfirmLogout(false),style:{background:"rgba(255,255,255,0.08)",border:"1px solid "+C.border,color:C.muted,borderRadius:10,padding:11,fontWeight:600,fontSize:14}},"Cancelar"),
+          React.createElement("button",{onClick:onLogout,style:{background:"rgba(255,107,107,0.15)",border:"1px solid rgba(255,107,107,0.3)",color:C.danger,borderRadius:10,padding:11,fontWeight:700,fontSize:14}},"Sair")
+        )
       )
     ),
     sectorModal&&React.createElement(SectorModal,{
