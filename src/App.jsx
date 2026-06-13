@@ -18,8 +18,8 @@ const INITIAL = {
   corridors:[],
 };
 
-async function persist(d){try{await window.storage.set("aereo-v7",JSON.stringify(d));}catch(e){}}
-async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
+async function persist(d){try{localStorage.setItem("aereo-v7",JSON.stringify(d));}catch(e){}}
+async function loadPersisted(){try{const r=localStorage.getItem("aereo-v7");return r?JSON.parse(r):null;}catch(e){return null;}}
 
 export default function App(){
   const [data,setData]=useState(null);
@@ -60,11 +60,14 @@ export default function App(){
     }catch(e){alert("Erro no backup: "+e.message);}
   }
 
-  function registerUndo(msg){
+  function registerUndo(msg, dbDeleteFn){
     const snapshot=dataRef.current; if(!snapshot) return;
     if(undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setUndoState({msg,snapshot});
-    undoTimerRef.current=setTimeout(()=>setUndoState(null),5000);
+    undoTimerRef.current=setTimeout(()=>{
+      setUndoState(null);
+      if(dbDeleteFn) dbDeleteFn().catch(console.error);
+    },5000);
   }
   function doUndo(){ if(undoState){ setData(undoState.snapshot); setUndoState(null); clearTimeout(undoTimerRef.current); } }
   function confirmDelete(msg,onConfirm){ setConfirmState({msg,onConfirm}); }
@@ -98,7 +101,7 @@ export default function App(){
       return Promise.all((bay.floors||[]).map(async floor=>{
         await db.upsertFloor({id:floor.id,bay_id:bay.id,number:floor.number});
         return Promise.all((floor.boxes||[]).map(box=>
-          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0})
+          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null})
         ));
       }));
     }));
@@ -133,16 +136,19 @@ export default function App(){
     screen.type==="sector"&&(()=>{
       const sector=(data.sectors||[]).find(s=>s.id===screen.sectorId);
       if(!sector) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Setor não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onUpdateCorridor:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,...sharedProps});
+      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onUpdateCorridor:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
     })(),
     screen.type==="bay"&&(()=>{
       const cor=data.corridors.find(c=>c.id===screen.corridorId);
       if(!cor) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
       const bay={...cor,mascot:getMascot(cor.sectorId)}.bays.find(b=>b.id===screen.bayId);
       if(!bay) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Bay não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),...sharedProps});
+      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,profile,onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),...sharedProps});
     })(),
-    screen.type==="products"&&React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,onDeleteProduct:sku=>{registerUndo("Produto excluído");deleteProduct(sku);},...sharedProps}),
+    screen.type==="products"&&React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
+      setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});
+      registerUndo("Produto excluído", ()=>db.deleteProduct(sku));
+    },...sharedProps}),
     screen.type==="validity"&&React.createElement(ValidityScreen,{data,onBack:back,onNavigate:handleNavigate}),
     showSearch&&React.createElement(SearchOverlay,{data,onClose:()=>setShowSearch(false),onNavigate:v=>{handleNavigate(v);setShowSearch(false);}}),
     confirmState&&React.createElement(ConfirmModal,{msg:confirmState.msg,onConfirm:()=>{confirmState.onConfirm();setConfirmState(null);},onCancel:()=>setConfirmState(null)}),
