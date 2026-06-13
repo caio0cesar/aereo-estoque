@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { C, Tag, Gap } from "./shared.jsx";
+import { C, Tag, Gap, isProOperator } from "./shared.jsx";
 import ProductModal from "./productmodal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { parsePrice, findBySku } from "../utils/dates.jsx";
 
-export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete}){
+export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete,profile}){
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
   const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||p.desc&&p.desc.toLowerCase().includes(search.toLowerCase())||p.fornecedor&&p.fornecedor.toLowerCase().includes(search.toLowerCase()));
@@ -15,7 +15,7 @@ export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,on
         React.createElement("div",{style:{fontWeight:700,fontSize:16}},"🗂 Catálogo de Produtos"),
         React.createElement("div",{style:{fontSize:11,color:C.muted}},Object.keys(products).length+" produtos")
       ),
-      React.createElement("button",{onClick:()=>setModal({product:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12,flexShrink:0}},"+ Novo")
+      isProOperator(profile)&&React.createElement("button",{onClick:()=>setModal({product:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12,flexShrink:0}},"+ Novo")
     ),
     React.createElement("div",{style:{padding:"12px 14px"}},
       React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"🔍 Buscar por SKU, descrição ou fornecedor..."}),
@@ -24,7 +24,7 @@ export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,on
         React.createElement("div",{style:{fontSize:32,marginBottom:8}},"📭"),
         React.createElement("div",{style:{fontSize:13}},search?"Nenhum produto encontrado.":"Nenhum produto cadastrado.")
       ),
-      list.map(p=>React.createElement("div",{key:p.sku,onClick:()=>setModal({product:p}),className:"ch fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:8,cursor:"pointer"}},
+      list.map(p=>React.createElement("div",{key:p.sku,onClick:()=>isProOperator(profile)&&setModal({product:p}),className:"ch fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:8,cursor:isProOperator(profile)?"pointer":"default"}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}},
           React.createElement(Tag,null,p.sku),
           p.um&&React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.muted},p.um)
