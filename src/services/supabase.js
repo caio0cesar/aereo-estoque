@@ -1,9 +1,38 @@
 import { fromISO } from "../utils/dates.jsx";
 
-const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
+const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
+
+async function refreshSession() {
+  const session = getSession();
+  if(!session||!session.refresh_token) return null;
+  try {
+    const res = await fetch(SUPA_URL+"/auth/v1/token?grant_type=refresh_token", {
+      method:"POST",
+      headers:{"apikey":SUPA_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({refresh_token:session.refresh_token}),
+    });
+    if(!res.ok) { saveSession(null); return null; }
+    const data = await res.json();
+    saveSession(data);
+    return data;
+  } catch { return null; }
+}
+
+function isTokenExpiringSoon(session) {
+  if(!session||!session.expires_at) return true;
+  const expiresAt = session.expires_at * 1000;
+  const fiveMinutes = 5 * 60 * 1000;
+  return Date.now() > expiresAt - fiveMinutes;
+}
 
 export async function sbFetch(path, options={}) {
-  const session = getSession();
+  let session = getSession();
+  if(session && isTokenExpiringSoon(session)) {
+    const refreshed = await refreshSession();
+    if(refreshed) session = refreshed;
+    else { saveSession(null); throw new Error("Sessão expirada. Faça login novamente."); }
+  }
   const headers = {
     "apikey": SUPA_KEY,
     "Content-Type": "application/json",
@@ -20,7 +49,10 @@ export function getSession() {
   try { const s=localStorage.getItem("sb_session"); return s?JSON.parse(s):null; } catch { return null; }
 }
 export function saveSession(s) {
-  try { localStorage.setItem("sb_session", s?JSON.stringify(s):""); } catch {}
+  try {
+    if(!s) localStorage.removeItem("sb_session");
+    else localStorage.setItem("sb_session", JSON.stringify(s));
+  } catch {}
 }
 
 export async function signIn(email, password) {
@@ -101,7 +133,7 @@ export async function loadFromSupabase() {
     boxes:(boxes||[]).filter(b=>b.floor_id===f.id).map(b=>({
       id:b.id, sku:b.sku, qty:b.qty,
       updatedBy:b.updated_by||"", date:fromISO(b.date)||"",
-      validade:fromISO(b.validade)||"", stackId:b.stack_id||null, stackOrder:b.stack_order||0,
+      validade:fromISO(b.validade)||"", stackId:b.stack_id||null, stackOrder:b.stack_order||0, slotIndex:b.slot_index!=null?b.slot_index:null,
     })),
   }));
   const baysWithFloors = (bays||[]).map(b => ({
