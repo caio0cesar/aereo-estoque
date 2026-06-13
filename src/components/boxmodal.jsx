@@ -3,7 +3,7 @@ import { C, Modal, Lbl, Gap, Row, NumInput, DateInput, SaveBtn, Tag } from "./sh
 import { getValidity } from "../utils/validity.jsx";
 import { todayFull, calcVenc, parsePrice } from "../utils/dates.jsx";
 
-export function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations}){
+export function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onClose,allLocations,canEdit}){
   const vi=getValidity(box.validade);
   const otherLocs=(allLocations||[]).filter(l=>l.box.id!==box.id);
   const rows=[
@@ -45,7 +45,7 @@ export function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onCl
         React.createElement("div",{style:{fontSize:12,color:C.muted}},"Produto não cadastrado.")
       )
     ),
-    React.createElement("button",{onClick:onEdit,style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:11,fontWeight:700,fontSize:13,width:"100%"}},"✏️ Editar Caixa")
+    canEdit&&React.createElement("button",{onClick:onEdit,style:{background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:11,fontWeight:700,fontSize:13,width:"100%"}},"✏️ Editar Caixa")
   );
 }
 
