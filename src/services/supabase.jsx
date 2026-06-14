@@ -1,118 +1,74 @@
+import { createClient } from "@supabase/supabase-js";
 import { fromISO } from "../utils/dates.jsx";
 
 const SUPA_URL = "https://crhknonvxsvxaxvwfdjs.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaGtub252eHN2eGF4dndmZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODMzMjAsImV4cCI6MjA5NTE1OTMyMH0.UdfXAFt4ZeM3uAmQG2oZhpUO6K3mwffg0Lfg_USlHWM";
 
-async function refreshSession() {
-  const session = getSession();
-  if(!session||!session.refresh_token) return null;
-  try {
-    const res = await fetch(SUPA_URL+"/auth/v1/token?grant_type=refresh_token", {
-      method:"POST",
-      headers:{"apikey":SUPA_KEY,"Content-Type":"application/json"},
-      body:JSON.stringify({refresh_token:session.refresh_token}),
-    });
-    if(!res.ok) { saveSession(null); return null; }
-    const data = await res.json();
-    saveSession(data);
-    return data;
-  } catch { return null; }
-}
+export const supabase = createClient(SUPA_URL, SUPA_KEY);
 
-function isTokenExpiringSoon(session) {
-  if(!session||!session.expires_at) return true;
-  const expiresAt = session.expires_at * 1000;
-  const fiveMinutes = 5 * 60 * 1000;
-  return Date.now() > expiresAt - fiveMinutes;
-}
-
-export async function sbFetch(path, options={}) {
-  let session = getSession();
-  if(session && isTokenExpiringSoon(session)) {
-    const refreshed = await refreshSession();
-    if(refreshed) session = refreshed;
-    else { saveSession(null); throw new Error("Sessão expirada. Faça login novamente."); }
-  }
-  const headers = {
-    "apikey": SUPA_KEY,
-    "Content-Type": "application/json",
-    ...(session ? {"Authorization":"Bearer "+session.access_token} : {"Authorization":"Bearer "+SUPA_KEY}),
-    ...options.headers,
-  };
-  const res = await fetch(SUPA_URL+path, {...options, headers});
-  if(!res.ok) { const err=await res.text(); throw new Error(err); }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-export function getSession() {
-  try { const s=localStorage.getItem("sb_session"); return s?JSON.parse(s):null; } catch { return null; }
-}
-export function saveSession(s) {
-  try {
-    if(!s) localStorage.removeItem("sb_session");
-    else localStorage.setItem("sb_session", JSON.stringify(s));
-  } catch {}
+// --- Auth ---
+export async function getSession() {
+  const { data } = await supabase.auth.getSession();
+  return data.session;
 }
 
 export async function signIn(email, password) {
-  const res = await fetch(SUPA_URL+"/auth/v1/token?grant_type=password", {
-    method:"POST",
-    headers:{"apikey":SUPA_KEY,"Content-Type":"application/json"},
-    body:JSON.stringify({email,password}),
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error_description||data.msg||"Erro ao fazer login");
-  saveSession(data);
-  return data;
-}
-
-export async function resetPassword(email) {
-  const res = await fetch(SUPA_URL+"/auth/v1/recover", {
-    method:"POST",
-    headers:{"apikey":SUPA_KEY,"Content-Type":"application/json"},
-    body:JSON.stringify({email}),
-  });
-  if(!res.ok) { const d=await res.json(); throw new Error(d.error_description||d.msg||"Erro ao enviar email"); }
-  return true;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if(error) throw new Error(error.message || "Email ou senha incorretos.");
+  return data.session;
 }
 
 export async function signOut() {
-  const session = getSession();
-  if(session) {
-    await fetch(SUPA_URL+"/auth/v1/logout", {
-      method:"POST",
-      headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+session.access_token},
-    }).catch(()=>{});
-  }
-  saveSession(null);
+  await supabase.auth.signOut();
+}
+
+export async function resetPassword(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if(error) throw new Error(error.message || "Erro ao enviar email.");
+  return true;
 }
 
 export async function getProfile() {
-  const data = await sbFetch("/rest/v1/profiles?select=*&limit=1");
-  return data&&data[0] ? data[0] : null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if(!user) return null;
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  if(error) return null;
+  return data;
 }
 
-export const db = {
-  async sectors()     { return sbFetch("/rest/v1/sectors?select=*&order=name"); },
-  async corridors()   { return sbFetch("/rest/v1/corridors?select=*&order=number"); },
-  async bays()        { return sbFetch("/rest/v1/bays?select=*&order=number"); },
-  async floors()      { return sbFetch("/rest/v1/floors?select=*&order=number"); },
-  async boxes()       { return sbFetch("/rest/v1/boxes?select=*"); },
-  async products()    { return sbFetch("/rest/v1/products?select=*&order=sku"); },
+// --- Helpers ---
+async function query(builder) {
+  const { data, error } = await builder;
+  if(error) throw new Error(error.message);
+  return data;
+}
+async function mutate(builder) {
+  const { error } = await builder;
+  if(error) throw new Error(error.message);
+  return true;
+}
 
-  async upsertSector(s)   { return sbFetch("/rest/v1/sectors",   {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(s)}); },
-  async deleteSector(id)  { return sbFetch("/rest/v1/sectors?id=eq."+id,  {method:"DELETE"}); },
-  async upsertCorridor(c) { return sbFetch("/rest/v1/corridors", {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(c)}); },
-  async deleteCorridor(id){ return sbFetch("/rest/v1/corridors?id=eq."+id,{method:"DELETE"}); },
-  async upsertBay(b)      { return sbFetch("/rest/v1/bays",      {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(b)}); },
-  async deleteBay(id)     { return sbFetch("/rest/v1/bays?id=eq."+id,     {method:"DELETE"}); },
-  async upsertFloor(f)    { return sbFetch("/rest/v1/floors",    {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(f)}); },
-  async deleteFloor(id)   { return sbFetch("/rest/v1/floors?id=eq."+id,   {method:"DELETE"}); },
-  async upsertBox(b)      { return sbFetch("/rest/v1/boxes",     {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(b)}); },
-  async deleteBox(id)     { return sbFetch("/rest/v1/boxes?id=eq."+id,    {method:"DELETE"}); },
-  async upsertProduct(p)  { return sbFetch("/rest/v1/products",  {method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(p)}); },
-  async deleteProduct(sku){ return sbFetch("/rest/v1/products?sku=eq."+sku,{method:"DELETE"}); },
+// --- DB ---
+export const db = {
+  async sectors()     { return query(supabase.from("sectors").select("*").order("name")); },
+  async corridors()   { return query(supabase.from("corridors").select("*").order("number")); },
+  async bays()        { return query(supabase.from("bays").select("*").order("number")); },
+  async floors()      { return query(supabase.from("floors").select("*").order("number")); },
+  async boxes()       { return query(supabase.from("boxes").select("*")); },
+  async products()    { return query(supabase.from("products").select("*").order("sku")); },
+
+  async upsertSector(s)   { return mutate(supabase.from("sectors").upsert(s)); },
+  async deleteSector(id)  { return mutate(supabase.from("sectors").delete().eq("id",id)); },
+  async upsertCorridor(c) { return mutate(supabase.from("corridors").upsert(c)); },
+  async deleteCorridor(id){ return mutate(supabase.from("corridors").delete().eq("id",id)); },
+  async upsertBay(b)      { return mutate(supabase.from("bays").upsert(b)); },
+  async deleteBay(id)     { return mutate(supabase.from("bays").delete().eq("id",id)); },
+  async upsertFloor(f)    { return mutate(supabase.from("floors").upsert(f)); },
+  async deleteFloor(id)   { return mutate(supabase.from("floors").delete().eq("id",id)); },
+  async upsertBox(b)      { return mutate(supabase.from("boxes").upsert(b)); },
+  async deleteBox(id)     { return mutate(supabase.from("boxes").delete().eq("id",id)); },
+  async upsertProduct(p)  { return mutate(supabase.from("products").upsert(p)); },
+  async deleteProduct(sku){ return mutate(supabase.from("products").delete().eq("sku",sku)); },
 };
 
 export async function loadFromSupabase() {
