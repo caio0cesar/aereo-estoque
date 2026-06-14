@@ -3,7 +3,7 @@ import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
 import LoginScreen from "./components/loginscreen.jsx";
 import { HomeScreen, SectorScreen, BayScreen } from "./components/navscreens.jsx";
 import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/screens.jsx";
-import { getSession, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.jsx";
+import { supabase, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.jsx";
 import { genId, parsePrice, renumberFloors, toISO } from "./utils/dates.jsx";
 
 const INITIAL = {
@@ -29,7 +29,7 @@ export default function App(){
   const [undoState,setUndoState]=useState(null);
   const undoTimerRef=useRef(null);
   const dataRef=useRef(null);
-  const [session,setSession]=useState(getSession);
+  const [session,setSession]=useState(undefined); // undefined = verificando sessão
   const [profile,setProfile]=useState(null);
   const [loadingData,setLoadingData]=useState(false);
 
@@ -39,6 +39,14 @@ export default function App(){
     catch(e){ console.warn("Supabase falhou, usando local:",e); setData(await loadPersisted()||INITIAL); }
     finally{ setLoadingData(false); }
   }
+
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data})=>setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession)=>{
+      setSession(newSession);
+    });
+    return ()=>listener.subscription.unsubscribe();
+  },[]);
 
   useEffect(()=>{ if(session){ getProfile().then(setProfile).catch(()=>{}); initData(); } },[session]);
   useEffect(()=>{ if(data){ persist(data); dataRef.current=data; } },[data]);
@@ -126,7 +134,11 @@ export default function App(){
     setScreenStack([{type:"home"},{type:"sector",sectorId:cor&&cor.sectorId},{type:"bay",corridorId,bayId,highlightBoxId:boxId}]);
   }
 
-  if(!session) return React.createElement(LoginScreen,{onLogin:()=>setSession(getSession())});
+  if(session===undefined) return React.createElement("div",{style:{background:"#071e26",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6aada0",fontSize:15,gap:12}},
+    React.createElement("div",{style:{fontSize:32}},"📦"),
+    React.createElement("div",null,"Verificando sessão...")
+  );
+  if(!session) return React.createElement(LoginScreen,{onLogin:()=>{}});
   if(loadingData||!data) return React.createElement("div",{style:{background:"#071e26",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6aada0",fontSize:15,gap:12}},
     React.createElement("div",{style:{fontSize:32}},"📦"),
     React.createElement("div",null,"Carregando dados...")
@@ -144,7 +156,7 @@ export default function App(){
       onOpenValidity:()=>nav({type:"validity"}),
       onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,
       onBackup:handleBackup,
-      profile,onLogout:async()=>{await signOut();setSession(null);setProfile(null);setData(null);setScreenStack([{type:"home"}]);},
+      profile,onLogout:async()=>{await signOut();setProfile(null);setData(null);setScreenStack([{type:"home"}]);},
       ...sharedProps
     }),
     screen.type==="sector"&&(()=>{
