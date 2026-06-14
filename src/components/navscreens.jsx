@@ -40,7 +40,7 @@ function SectorModal({sector,onSave,onClose}){
 }
 
 // --- BayScreen ---
-export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [modal,setModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
   const dragRef=useRef(null);
@@ -99,7 +99,7 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,hi
         ),
         React.createElement(FloorRow,{floor,mascot:corridor.mascot||"📦",products,onClickBox:box=>setDetailModal({box,floorId:floor.id,floorNumber:floor.number}),onUpdateFloor:handleFloorUpdate,dragRef,draggingId,setDraggingId})
       )),
-      isEndministrator(profile)&&React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBay({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},"+ Adicionar Andar")
+      isEndministrator(profile)&&React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBayStructure({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},"+ Adicionar Andar")
     ),
     detailModal&&!modal&&React.createElement(BoxDetailModal,{
       box:detailModal.box,product:products[detailModal.box.sku],
@@ -114,7 +114,7 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,hi
 }
 
 // --- CorridorScreen ---
-export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,onSyncBoxes,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
   const [bayModal,setBayModal]=useState(null);
 
@@ -122,7 +122,8 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
     const bay=corridor.bays.find(b=>b.id===selectedBay);
     if(!bay){setSelectedBay(null);return null;}
     return React.createElement(BayScreen,{bay,corridor,products,corridors,onBack:()=>setSelectedBay(null),highlightBoxId,onConfirmDelete,onRegisterUndo,profile,
-      onUpdateBay:updated=>onUpdateCorridor({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)})});
+      onUpdateBay:updated=>onSyncBoxes({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)}),
+      onUpdateBayStructure:updated=>onUpdateCorridor({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)})});
   }
 
   function getNextNum(side){const nums=corridor.bays.filter(b=>b.side===side).map(b=>b.number);return nums.length===0?1:Math.max(...nums)+1;}
@@ -183,14 +184,14 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
 }
 
 // --- SectorScreen ---
-export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onSyncBoxes,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
   const [corridorModal,setCorridorModal]=useState(null);
 
   if(selectedCorridorId){
     const cor=corridors.find(c=>c.id===selectedCorridorId);
     if(!cor){setSelectedCorridorId(null);return null;}
-    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),highlightBayId,highlightBoxId,onUpdateCorridor,onConfirmDelete,onRegisterUndo,profile});
+    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),highlightBayId,highlightBoxId,onUpdateCorridor,onSyncBoxes,onConfirmDelete,onRegisterUndo,profile});
   }
 
   function handleCorridorSave(number){
