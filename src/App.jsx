@@ -74,6 +74,10 @@ export default function App(){
 
   function updateCorridor(updated){
     setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));
+    syncBoxesOnly(updated).catch(console.error);
+  }
+  function updateCorridorStructure(updated){
+    setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));
     syncCorridor(updated).catch(console.error);
   }
   function addCorridor(cor){
@@ -93,6 +97,16 @@ export default function App(){
   function addSector(s){ setData(d=>({...d,sectors:[...(d.sectors||[]),s]})); db.upsertSector({id:s.id,name:s.name,mascot:s.mascot}).catch(console.error); }
   function editSector(s){ setData(d=>({...d,sectors:(d.sectors||[]).map(x=>x.id===s.id?s:x)})); db.upsertSector({id:s.id,name:s.name,mascot:s.mascot}).catch(console.error); }
   function deleteSector(id){ setData(d=>({...d,sectors:(d.sectors||[]).filter(s=>s.id!==id)})); db.deleteSector(id).catch(console.error); }
+
+  async function syncBoxesOnly(cor){
+    return Promise.all((cor.bays||[]).map(bay =>
+      Promise.all((bay.floors||[]).map(floor =>
+        Promise.all((floor.boxes||[]).map(box =>
+          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null})
+        ))
+      ))
+    ));
+  }
 
   async function syncCorridor(cor){
     await db.upsertCorridor({id:cor.id,sector_id:cor.sectorId,number:cor.number});
@@ -136,14 +150,17 @@ export default function App(){
     screen.type==="sector"&&(()=>{
       const sector=(data.sectors||[]).find(s=>s.id===screen.sectorId);
       if(!sector) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Setor não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onUpdateCorridor:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
+      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onUpdateCorridor:updateCorridorStructure,onSyncBoxes:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
     })(),
     screen.type==="bay"&&(()=>{
       const cor=data.corridors.find(c=>c.id===screen.corridorId);
       if(!cor) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
       const bay={...cor,mascot:getMascot(cor.sectorId)}.bays.find(b=>b.id===screen.bayId);
       if(!bay) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Bay não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,profile,onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),...sharedProps});
+      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,profile,
+        onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
+        onUpdateBayStructure:updated=>updateCorridorStructure({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
+        ...sharedProps});
     })(),
     screen.type==="products"&&React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
       setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});
