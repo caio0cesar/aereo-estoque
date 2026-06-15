@@ -28,6 +28,21 @@ export async function resetPassword(email) {
   return true;
 }
 
+export async function signUp(email, password, name, sectorId) {
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: { data: { name, sector_id: sectorId } }
+  });
+  if(error) throw new Error(error.message || "Erro ao criar conta.");
+  return data;
+}
+
+export async function getSectorsPublic() {
+  const { data, error } = await supabase.from("sectors").select("id,name,mascot").order("name");
+  if(error) return [];
+  return data||[];
+}
+
 export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser();
   if(!user) return null;
