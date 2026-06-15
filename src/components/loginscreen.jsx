@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { signIn, resetPassword } from "../services/supabase.jsx";
+import React, { useState, useEffect } from "react";
+import { signIn, resetPassword, signUp, getSectorsPublic } from "../services/supabase.jsx";
 import { DuckIcon, C } from "./shared.jsx";
 import { todayFull } from "../utils/dates.jsx";
 
-async function loadPersisted(){try{const r=await window.storage.get("aereo-v7");return r?JSON.parse(r.value):null;}catch(e){return null;}}
+async function loadPersisted(){try{const r=localStorage.getItem("aereo-v7");return r?JSON.parse(r):null;}catch(e){return null;}}
 
 export default function LoginScreen({onLogin}){
   const [email,setEmail]=useState("");
@@ -16,6 +16,14 @@ export default function LoginScreen({onLogin}){
   const [resetEmail,setResetEmail]=useState("");
   const [resetLoading,setResetLoading]=useState(false);
   const [resetMsg,setResetMsg]=useState("");
+  const [signupMode,setSignupMode]=useState(false);
+  const [signupName,setSignupName]=useState("");
+  const [signupEmail,setSignupEmail]=useState("");
+  const [signupPassword,setSignupPassword]=useState("");
+  const [signupSectorId,setSignupSectorId]=useState("");
+  const [sectors,setSectors]=useState([]);
+  const [signupLoading,setSignupLoading]=useState(false);
+  const [signupMsg,setSignupMsg]=useState("");
 
   async function handleLogin(){
     if(!email||!password){setError("Preencha email e senha.");return;}
@@ -23,6 +31,21 @@ export default function LoginScreen({onLogin}){
     try{ await signIn(email,password); onLogin(); }
     catch(e){ setError(e.message||"Email ou senha incorretos."); }
     finally{ setLoading(false); }
+  }
+
+  useEffect(()=>{
+    if(signupMode&&sectors.length===0) getSectorsPublic().then(setSectors);
+  },[signupMode]);
+
+  async function handleSignup(){
+    if(!signupName||!signupEmail||!signupPassword||!signupSectorId){setSignupMsg("Preencha todos os campos.");return;}
+    if(signupPassword.length<6){setSignupMsg("A senha deve ter no mínimo 6 caracteres.");return;}
+    setSignupLoading(true);setSignupMsg("");
+    try{
+      await signUp(signupEmail,signupPassword,signupName,signupSectorId);
+      setSignupMsg("✓ Conta criada! Verifique seu email para confirmar, depois faça login.");
+    }catch(e){ setSignupMsg(e.message||"Erro ao criar conta."); }
+    finally{ setSignupLoading(false); }
   }
 
   async function handleReset(){
@@ -85,7 +108,7 @@ export default function LoginScreen({onLogin}){
       React.createElement("div",{style:{fontSize:13,color:"#3f7068",marginTop:10}},"Faça login para continuar")
     ),
     React.createElement("div",{className:"login-card",style:{width:"100%",maxWidth:360,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:24,backdropFilter:"blur(10px)",overflow:"hidden"}},
-      !resetMode?(
+      !resetMode&&!signupMode?(
         React.createElement(React.Fragment,null,
           error&&React.createElement("div",{style:{background:"rgba(255,107,107,0.12)",border:"1px solid rgba(255,107,107,0.25)",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#ff6b6b",textAlign:"center"}},error),
           React.createElement("div",{style:{marginBottom:14}},
@@ -102,9 +125,10 @@ export default function LoginScreen({onLogin}){
             )
           ),
           React.createElement("button",{onClick:()=>{setResetMode(true);setError("");},style:{background:"none",border:"none",color:"#3f7068",fontSize:11,textAlign:"right",width:"100%",marginBottom:16,cursor:"pointer"}},"Esqueci minha senha"),
-          React.createElement("button",{onClick:handleLogin,disabled:loading,style:{background:loading?"rgba(29,209,161,0.4)":"linear-gradient(135deg,#1dd1a1,#17a880)",color:"#071e26",border:"none",borderRadius:12,padding:"14px",fontWeight:800,fontSize:15,width:"100%",cursor:loading?"not-allowed":"pointer",boxShadow:loading?"none":"0 4px 20px rgba(29,209,161,0.3)",transition:"all 0.2s"}},loading?"Entrando...":"Entrar")
+          React.createElement("button",{onClick:handleLogin,disabled:loading,style:{background:loading?"rgba(29,209,161,0.4)":"linear-gradient(135deg,#1dd1a1,#17a880)",color:"#071e26",border:"none",borderRadius:12,padding:"14px",fontWeight:800,fontSize:15,width:"100%",cursor:loading?"not-allowed":"pointer",boxShadow:loading?"none":"0 4px 20px rgba(29,209,161,0.3)",transition:"all 0.2s"}},loading?"Entrando...":"Entrar"),
+          React.createElement("button",{onClick:()=>{setSignupMode(true);setError("");setSignupMsg("");},style:{background:"none",border:"none",color:"#3f7068",fontSize:11,textAlign:"center",width:"100%",marginTop:14,cursor:"pointer"}},"Não tem conta? Criar conta")
         )
-      ):(
+      ):resetMode?(
         React.createElement(React.Fragment,null,
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:14}},
             React.createElement("button",{onClick:()=>{setResetMode(false);setResetMsg("");},style:{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",padding:0}},"←"),
@@ -114,6 +138,34 @@ export default function LoginScreen({onLogin}){
           React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:10}},"Digite seu email para receber o link de redefinição:"),
           React.createElement("input",{type:"email",value:resetEmail,onChange:e=>{setResetEmail(e.target.value);setResetMsg("");},placeholder:"seu@email.com",style:{marginBottom:12}}),
           React.createElement("button",{onClick:handleReset,disabled:resetLoading,style:{background:resetLoading?"rgba(29,209,161,0.4)":"linear-gradient(135deg,#1dd1a1,#17a880)",color:"#071e26",border:"none",borderRadius:12,padding:"13px",fontWeight:800,fontSize:14,width:"100%",cursor:resetLoading?"not-allowed":"pointer"}},resetLoading?"Enviando...":"Enviar link de recuperação")
+        )
+      ):(
+        React.createElement(React.Fragment,null,
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:14}},
+            React.createElement("button",{onClick:()=>{setSignupMode(false);setSignupMsg("");},style:{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",padding:0}},"←"),
+            React.createElement("span",{style:{fontWeight:700,fontSize:14,color:C.text}},"Criar conta")
+          ),
+          signupMsg&&React.createElement("div",{style:{background:signupMsg.includes("✓")?"rgba(29,209,161,0.12)":"rgba(255,107,107,0.12)",border:"1px solid "+(signupMsg.includes("✓")?"rgba(29,209,161,0.3)":"rgba(255,107,107,0.3)"),borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:signupMsg.includes("✓")?"#1dd1a1":"#ff6b6b",textAlign:"center"}},signupMsg),
+          React.createElement("div",{style:{marginBottom:10}},
+            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"SEU NOME"),
+            React.createElement("input",{value:signupName,onChange:e=>{setSignupName(e.target.value);setSignupMsg("");},placeholder:"Como você quer ser chamado"})
+          ),
+          React.createElement("div",{style:{marginBottom:10}},
+            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"EMAIL"),
+            React.createElement("input",{type:"email",value:signupEmail,onChange:e=>{setSignupEmail(e.target.value);setSignupMsg("");},placeholder:"seu@email.com"})
+          ),
+          React.createElement("div",{style:{marginBottom:10}},
+            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"SENHA"),
+            React.createElement("input",{type:"password",value:signupPassword,onChange:e=>{setSignupPassword(e.target.value);setSignupMsg("");},placeholder:"Mínimo 6 caracteres"})
+          ),
+          React.createElement("div",{style:{marginBottom:14}},
+            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"SEU SETOR"),
+            React.createElement("select",{value:signupSectorId,onChange:e=>{setSignupSectorId(e.target.value);setSignupMsg("");}},
+              React.createElement("option",{value:""},"Selecione..."),
+              sectors.map(s=>React.createElement("option",{key:s.id,value:s.id},(s.mascot?s.mascot+" ":"")+s.name))
+            )
+          ),
+          React.createElement("button",{onClick:handleSignup,disabled:signupLoading,style:{background:signupLoading?"rgba(29,209,161,0.4)":"linear-gradient(135deg,#1dd1a1,#17a880)",color:"#071e26",border:"none",borderRadius:12,padding:"14px",fontWeight:800,fontSize:15,width:"100%",cursor:signupLoading?"not-allowed":"pointer"}},signupLoading?"Criando...":"Criar conta")
         )
       ),
       React.createElement("button",{onClick:handleBackup,style:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"#3f7068",borderRadius:10,padding:"8px 12px",fontSize:11,width:"100%",marginTop:14,cursor:"pointer"}},"💾 Backup local")
