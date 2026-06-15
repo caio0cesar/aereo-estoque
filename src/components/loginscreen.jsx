@@ -147,8 +147,8 @@ export default function LoginScreen({onLogin}){
           ),
           signupMsg&&React.createElement("div",{style:{background:signupMsg.includes("✓")?"rgba(29,209,161,0.12)":"rgba(255,107,107,0.12)",border:"1px solid "+(signupMsg.includes("✓")?"rgba(29,209,161,0.3)":"rgba(255,107,107,0.3)"),borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:signupMsg.includes("✓")?"#1dd1a1":"#ff6b6b",textAlign:"center"}},signupMsg),
           React.createElement("div",{style:{marginBottom:10}},
-            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"SEU NOME"),
-            React.createElement("input",{value:signupName,onChange:e=>{setSignupName(e.target.value);setSignupMsg("");},placeholder:"Como você quer ser chamado"})
+            React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"Nome"),
+            React.createElement("input",{value:signupName,onChange:e=>{setSignupName(e.target.value);setSignupMsg("");},placeholder:"Digite seu nome"})
           ),
           React.createElement("div",{style:{marginBottom:10}},
             React.createElement("label",{style:{fontSize:11,color:"#6aada0",fontWeight:700,letterSpacing:"0.08em",display:"block",marginBottom:6}},"EMAIL"),
