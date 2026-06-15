@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { getValidity } from "../utils/validity.jsx";
 import { DuckIcon } from "./shared.jsx";
 
-export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack}){
+export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove}){
   const [hovered,setHovered]=useState(-1);
   const CARD_H=90, PEEK=32;
   const colHeight=group.length===1?CARD_H:CARD_H+(group.length-1)*PEEK;
@@ -18,12 +18,13 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
       const isFront=i===0, isHov=hovered===i;
       const topOffset=(group.length-1-i)*PEEK;
       return React.createElement("div",{
-        key:box.id, draggable:true,
-        onDragStart:e=>{dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);e.dataTransfer.effectAllowed="move";},
+        key:box.id, draggable:!!canMove,
+        onDragStart:e=>{if(!canMove)return;dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);e.dataTransfer.effectAllowed="move";},
         onDragEnd:()=>{dragRef.current=null;setDraggingId(null);},
-        onDragOver:e=>{e.preventDefault();e.dataTransfer.dropEffect="move";},
+        onDragOver:e=>{if(!canMove)return;e.preventDefault();e.dataTransfer.dropEffect="move";},
         onMouseEnter:()=>setHovered(i), onMouseLeave:()=>setHovered(-1),
         onTouchStart:e=>{
+          if(!canMove)return;
           setHovered(i);
           const t=e.touches[0];
           const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false,longPressReady:false,isScroll:false};
@@ -66,7 +67,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           position:"absolute", top:topOffset, left:0, width:"100%", height:CARD_H,
           background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,78,0.98)":"rgba(8,42,58,0.96)",
           border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)"),
-          borderRadius:10, padding:"8px 9px", cursor:"grab", overflow:"hidden",
+          borderRadius:10, padding:"8px 9px", cursor:canMove?"grab":"pointer", overflow:"hidden",
           transform:"translateY("+(isHov?-10:0)+"px)",
           transition:"transform 0.18s ease, box-shadow 0.18s",
           zIndex:isHov?100:group.length-i,
