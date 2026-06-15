@@ -51,7 +51,7 @@ export function BoxDetailModal({box,product,floorNumber,bay,corridor,onEdit,onCl
 
 export function BoxEditModal({modal,products,onSave,onClose,onDelete}){
   const isEdit=modal.type==="edit";
-  const [form,setForm]=useState(isEdit?{...modal.box}:{sku:"",qty:"",updatedBy:"",date:todayFull(),validade:"",stackId:null,stackOrder:0});
+  const [form,setForm]=useState(isEdit?{...modal.box}:{sku:"",qty:"",date:todayFull(),validade:"",stackId:null,stackOrder:0});
   const [valdMode,setValdMode]=useState("direta");
   const [fabDate,setFabDate]=useState("");
   const [meses,setMeses]=useState("");
@@ -66,10 +66,8 @@ export function BoxEditModal({modal,products,onSave,onClose,onDelete}){
     product&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:C.accent,background:C.accentDim,borderRadius:8,padding:"6px 10px"}},"✓ "+(product.desc||"Produto cadastrado")),
     form.sku&&!product&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:C.dim,background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"6px 10px"}},"SKU não cadastrado."),
     React.createElement(Gap,null),
-    React.createElement(Row,null,
-      React.createElement("div",null,React.createElement(Lbl,{req:true},"Quantidade"),React.createElement(NumInput,{value:form.qty,onChange:v=>set("qty",v),placeholder:"0"})),
-      React.createElement("div",null,React.createElement(Lbl,null,"Nome"),React.createElement("input",{value:form.updatedBy,onChange:e=>set("updatedBy",e.target.value),placeholder:""}))
-    ),
+    React.createElement(Lbl,{req:true},"Quantidade"),
+    React.createElement(NumInput,{value:form.qty,onChange:v=>set("qty",v),placeholder:"0"}),
     React.createElement(Gap,null),
     React.createElement(Lbl,null,"Validade"),
     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:8}},
