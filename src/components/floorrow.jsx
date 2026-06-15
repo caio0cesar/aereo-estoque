@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import StackColumn from "./stackcolumn.jsx";
 
-export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId}){
+export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8;
 
   function buildSlots(boxes){
@@ -56,7 +56,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
         onDrop:e=>{e.preventDefault();e.stopPropagation();dropOnSlot(slotIdx);},
         style:{flexShrink:0,width:SLOT_W,height:group?(90+(group.length-1)*32):SLOT_H,minHeight:SLOT_H,border:isOver?"2px dashed #1dd1a1":(group?"none":"1px dashed rgba(255,255,255,0.07)"),borderRadius:12,background:isOver?"rgba(29,209,161,0.06)":"transparent",position:"relative",transition:"border-color 0.15s, background 0.15s"}
       },
-        group&&React.createElement(StackColumn,{group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId:floor.id,onDropOnStack:(targetBoxId,fid,touchSlotIdx)=>dropOnSlot(touchSlotIdx!=null?touchSlotIdx:slotIdx)}),
+        group&&React.createElement(StackColumn,{group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId:floor.id,canMove,onDropOnStack:(targetBoxId,fid,touchSlotIdx)=>dropOnSlot(touchSlotIdx!=null?touchSlotIdx:slotIdx)}),
         !group&&isOver&&React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#1dd1a1",fontWeight:600}},"Soltar aqui")
       );
     })
