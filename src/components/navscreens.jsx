@@ -59,7 +59,7 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,on
   }
 
   function handleSave(form){
-    const box=modal.type==="edit"?{...modal.box,...form}:{...form,id:genId()};
+    const box=modal.type==="edit"?{...modal.box,...form,updatedBy:(profile&&profile.name)||modal.box.updatedBy||""}:{...form,id:genId(),updatedBy:(profile&&profile.name)||""};
     updateBayFloors(bay.floors.map(f=>{
       if(modal.type==="add"&&f.id===modal.floorId) return{...f,boxes:[...f.boxes,box]};
       if(modal.type==="edit"&&f.id===modal.floorId) return{...f,boxes:f.boxes.map(b=>b.id===box.id?box:b)};
