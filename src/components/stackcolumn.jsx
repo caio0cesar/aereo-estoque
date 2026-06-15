@@ -26,18 +26,30 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
         onTouchStart:e=>{
           setHovered(i);
           const t=e.touches[0];
-          dragRef.current={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false};
+          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false,longPressReady:false,isScroll:false};
+          dr.longPressTimer=setTimeout(()=>{dr.longPressReady=true;},300);
+          dragRef.current=dr;
           setDraggingId(box.id);
         },
         onTouchMove:e=>{
           const dr=dragRef.current; if(!dr||!dr.box) return;
           const t=e.touches[0];
           const dx=Math.abs(t.clientX-(dr.touchStartX||0)), dy=Math.abs(t.clientY-(dr.touchStartY||0));
+          if(!dr.longPressReady){
+            if(dx>8||dy>8){
+              clearTimeout(dr.longPressTimer);
+              setHovered(-1);
+              dragRef.current=null;
+              setDraggingId(null);
+            }
+            return;
+          }
           if(dx>8||dy>8){dr.isDragging=true;e.preventDefault();}
         },
         onTouchEnd:e=>{
           setHovered(-1);
           const dr=dragRef.current;
+          if(dr&&dr.longPressTimer) clearTimeout(dr.longPressTimer);
           if(!dr||!dr.isDragging){dragRef.current=null;setDraggingId(null);return;}
           const t=e.changedTouches[0];
           let slot=document.elementFromPoint(t.clientX,t.clientY);
@@ -63,7 +75,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
         }
       },
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
-          mascot==="🦆"?React.createElement(DuckIcon,{size:50}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
+          mascot==="🦆"?React.createElement(DuckIcon,{size:34}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
         ),
         isFront?(
           React.createElement(React.Fragment,null,
