@@ -3,6 +3,7 @@ import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
 import LoginScreen from "./components/loginscreen.jsx";
 import { HomeScreen, SectorScreen, BayScreen } from "./components/navscreens.jsx";
 import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/screens.jsx";
+import OperatorsScreen from "./components/operatorsscreen.jsx";
 import { supabase, signOut, getProfile, loadFromSupabase, db } from "./services/supabase.jsx";
 import { genId, parsePrice, renumberFloors, toISO } from "./utils/dates.jsx";
 
@@ -154,6 +155,7 @@ export default function App(){
       onSelectSector:id=>nav({type:"sector",sectorId:id}),
       onOpenProducts:()=>nav({type:"products"}),
       onOpenValidity:()=>nav({type:"validity"}),
+      onOpenOperators:()=>nav({type:"operators"}),
       onAddSector:addSector,onEditSector:editSector,onDeleteSector:deleteSector,
       onBackup:handleBackup,
       profile,onLogout:async()=>{await signOut();setProfile(null);setData(null);setScreenStack([{type:"home"}]);},
@@ -174,7 +176,7 @@ export default function App(){
         onUpdateBayStructure:updated=>updateCorridorStructure({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
         ...sharedProps});
     })(),
-    screen.type==="products"&&React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
+    screen.type==="operators"&&React.createElement(OperatorsScreen,{onBack:back,sectors:data.sectors}),React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
       setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});
       registerUndo("Produto excluído", ()=>db.deleteProduct(sku));
     },...sharedProps}),
