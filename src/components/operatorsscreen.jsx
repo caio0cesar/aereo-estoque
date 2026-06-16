@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { C, Tag, Gap } from "./shared.jsx";
 import { supabase } from "../services/supabase.jsx";
 
-const ROLES = ["looker","operator","pro-operator","endministrator"];
+const ROLES = ["looker","operator","pro-operator"];
 const ROLE_LABELS = {"looker":"Looker","operator":"Operator","pro-operator":"Pro-Operator","endministrator":"Endministrator"};
 
 async function loadUsers() {
