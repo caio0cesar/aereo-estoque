@@ -43,6 +43,25 @@ export async function getSectorsPublic() {
   return data||[];
 }
 
+export async function getMyRequests() {
+  const { data, error } = await supabase.from("change_requests").select("*").eq("status","pending");
+  if(error) return [];
+  return data||[];
+}
+
+export async function createRequest(type, currentValue, requestedValue) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if(!user) throw new Error("Não autenticado.");
+  const { error } = await supabase.from("change_requests").insert({
+    user_id: user.id,
+    type,
+    current_value: currentValue,
+    requested_value: requestedValue,
+  });
+  if(error) throw new Error(error.message);
+  return true;
+}
+
 export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser();
   if(!user) return null;
