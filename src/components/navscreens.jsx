@@ -248,7 +248,7 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUp
 }
 
 // --- HomeScreen ---
-export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenOperators,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout,onBackup}){
+export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenOperators,onOpenProfile,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout,onBackup}){
   const [sectorModal,setSectorModal]=useState(null);
   const [confirmLogout,setConfirmLogout]=useState(false);
   const [search,setSearch]=useState("");
@@ -273,6 +273,7 @@ export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,on
         React.createElement("div",{style:{fontSize:12,color:C.muted}},profile?"Bem vindo, "+getRoleLabel(profile.role):"Toque para explorar"),
         React.createElement("div",{style:{display:"flex",gap:6}},
           onBackup&&React.createElement("button",{onClick:onBackup,style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"💾"),
+          !isEndministrator(profile)&&React.createElement("button",{onClick:onOpenProfile,style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"⚙️"),
           onLogout&&React.createElement("button",{onClick:()=>setConfirmLogout(true),style:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,borderRadius:8,padding:"5px 10px",fontSize:11}},"Sair")
         )
       ),
