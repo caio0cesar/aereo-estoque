@@ -278,7 +278,7 @@ export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,on
         )
       ),
       React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
-        React.createElement("button",{onClick:onOpenProducts,style:{flex:1,background:C.accentDim,border:"1px solid rgba(29,209,161,0.25)",color:C.accent,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},"🗂 Produtos"),
+        React.createElement("button",{onClick:onOpenProducts,style:{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,color:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12},"🗂 Produtos"),
         React.createElement("button",{onClick:onOpenValidity,className:hasExpiring?"blink":"",style:{flex:1,background:hasExpiring?"rgba(255,107,107,0.12)":"rgba(255,255,255,0.06)",border:"1px solid "+(hasExpiring?"rgba(255,107,107,0.3)":C.border),color:hasExpiring?C.danger:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},hasExpiring?"⚠️ Validades ("+expiringItems.length+")":"⏰ Validades"),
         isEndministrator(profile)&&React.createElement("button",{onClick:onOpenOperators,style:{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,color:C.muted,borderRadius:10,padding:"10px 8px",fontWeight:700,fontSize:12}},"👥 Operators")
       ),
