@@ -179,7 +179,7 @@ export default function App(){
         ...sharedProps});
     })(),
     screen.type==="operators"&&React.createElement(OperatorsScreen,{onBack:back,sectors:data.sectors}),
-    screen.type==="profile"&&React.createElement(ProfileScreen,{onBack:back,profile,sectors:data.sectors}),React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
+    screen.type==="profile"&&React.createElement(ProfileScreen,{onBack:back,profile,sectors:data.sectors}),screen.type==="products"&&React.createElement(ProductsScreen,{products:data.products,onBack:back,onSaveProduct:saveProduct,profile,onDeleteProduct:sku=>{
       setData(d=>{const p={...d.products};delete p[sku];return{...d,products:p};});
       registerUndo("Produto excluído", ()=>db.deleteProduct(sku));
     },...sharedProps}),
