@@ -33,6 +33,7 @@ export default function App(){
   const dataRef=useRef(null);
   const [session,setSession]=useState(undefined); // undefined = verificando sessão
   const [profile,setProfile]=useState(null);
+const [passwordRecovery,setPasswordRecovery]=useState(false);
   const [loadingData,setLoadingData]=useState(false);
 
   async function initData(){
@@ -47,9 +48,15 @@ export default function App(){
 useEffect(()=>{
     supabase.auth.getSession().then(({data})=>setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession)=>{
+      if(event==="PASSWORD_RECOVERY"){
+        setPasswordRecovery(true);
+        setSession(newSession);
+        return;
+      }
       if(event==="SIGNED_IN"||event==="SIGNED_OUT"||event==="USER_UPDATED"){
         setSession(newSession);
       }
+    });
     });
     return ()=>listener.subscription.unsubscribe();
   },[]);
