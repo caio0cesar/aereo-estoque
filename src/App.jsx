@@ -58,9 +58,8 @@ useEffect(()=>{
         setSession(newSession);
       }
     });
-    });
     return ()=>listener.subscription.unsubscribe();
-  }[];
+  },[]);
   useEffect(()=>{
     if(session&&!initedRef.current){
       initedRef.current=true;
