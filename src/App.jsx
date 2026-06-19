@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
 import LoginScreen from "./components/loginscreen.jsx";
+import ResetPasswordScreen from "./components/resetpasswordscreen.jsx";
 import { HomeScreen, SectorScreen, BayScreen } from "./components/navscreens.jsx";
 import { ProductsScreen, ValidityScreen, SearchOverlay } from "./components/screens.jsx";
 import OperatorsScreen from "./components/operatorsscreen.jsx";
@@ -152,8 +153,8 @@ useEffect(()=>{
     setScreenStack([{type:"home"},{type:"sector",sectorId:cor&&cor.sectorId},{type:"bay",corridorId,bayId,highlightBoxId:boxId}]);
   }
 
-  if(session===undefined) return React.createElement("div",{style:{background:"#071e26",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6aada0",fontSize:15,gap:12}},
-    React.createElement("div",{style:{fontSize:32}},"📦"),
+ if(passwordRecovery) return React.createElement(ResetPasswordScreen,{onDone:()=>{setPasswordRecovery(false);}});
+if(session===undefined) return React.createElement("div",{style:{background:"#071e26",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6aada0",fontSize:15,gap:12}},    React.createElement("div",{style:{fontSize:32}},"📦"),
     React.createElement("div",null,"Verificando sessão...")
   );
   if(!session) return React.createElement(LoginScreen,{onLogin:()=>{}});
