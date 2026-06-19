@@ -39,7 +39,12 @@ export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,on
     ),
     modal&&React.createElement(ProductModal,{
       product:modal.product,
-      onSave:p=>{onSaveProduct(p);setModal(null);},
+      onSave:p=>{
+        if(!modal.product&&products[p.sku]){
+          if(!window.confirm("SKU "+p.sku+" já existe! Deseja sobrescrever o produto existente?")){return;}
+        }
+        onSaveProduct(p);setModal(null);
+      },
       onClose:()=>setModal(null),
       onDelete:modal.product?()=>onConfirmDelete("Excluir produto "+modal.product.sku+"?",()=>{onDeleteProduct(modal.product.sku);setModal(null);}):undefined,
     })
