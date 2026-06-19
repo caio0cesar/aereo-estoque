@@ -42,7 +42,9 @@ export default function App(){
     finally{ setLoadingData(false); }
   }
 
-  useEffect(()=>{
+  const initedRef = useRef(false);
+
+useEffect(()=>{
     supabase.auth.getSession().then(({data})=>setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession)=>{
       if(event==="SIGNED_IN"||event==="SIGNED_OUT"||event==="USER_UPDATED"){
@@ -51,7 +53,13 @@ export default function App(){
     });
     return ()=>listener.subscription.unsubscribe();
   },[]);
-  useEffect(()=>{ if(session){ getProfile().then(setProfile).catch(()=>{}); initData(); } },[]);
+  useEffect(()=>{
+    if(session&&!initedRef.current){
+      initedRef.current=true;
+      getProfile().then(setProfile).catch(()=>{});
+      initData();
+    }
+  },[session]);
   useEffect(()=>{ if(data){ persist(data); dataRef.current=data; } },[data]);
 
   const screen=screenStack[screenStack.length-1];
