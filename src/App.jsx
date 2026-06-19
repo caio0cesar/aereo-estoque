@@ -44,13 +44,14 @@ export default function App(){
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=>setSession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession)=>{
-      setSession(newSession);
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession)=>{
+      if(event==="SIGNED_IN"||event==="SIGNED_OUT"||event==="USER_UPDATED"){
+        setSession(newSession);
+      }
     });
     return ()=>listener.subscription.unsubscribe();
   },[]);
-
-  useEffect(()=>{ if(session){ getProfile().then(setProfile).catch(()=>{}); initData(); } },[session]);
+  useEffect(()=>{ if(session){ getProfile().then(setProfile).catch(()=>{}); initData(); } },[]);
   useEffect(()=>{ if(data){ persist(data); dataRef.current=data; } },[data]);
 
   const screen=screenStack[screenStack.length-1];
