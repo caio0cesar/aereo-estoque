@@ -28,6 +28,12 @@ export async function resetPassword(email) {
   return true;
 }
 
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if(error) throw new Error(error.message || "Erro ao atualizar senha.");
+  return true;
+}
+
 export async function signUp(email, password, name, sectorId) {
   const { data, error } = await supabase.auth.signUp({
     email, password,
