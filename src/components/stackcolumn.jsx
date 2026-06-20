@@ -4,6 +4,26 @@ import { DuckIcon } from "./shared.jsx";
 
 export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef}){
   const [hovered,setHovered]=useState(-1);
+
+  function startAutoScroll(dr){
+    function step(){
+      if(!dragRef.current||dragRef.current!==dr||!dr.isDragging){dr.autoScrollRAF=null;return;}
+      if(scrollRef&&scrollRef.current){
+        const rect=scrollRef.current.getBoundingClientRect();
+        const edge=70, maxSpeed=12;
+        const x=dr.lastX;
+        if(x<rect.left+edge){
+          const speed=Math.ceil((1-Math.max(0,x-rect.left)/edge)*maxSpeed);
+          scrollRef.current.scrollLeft-=speed;
+        }else if(x>rect.right-edge){
+          const speed=Math.ceil((1-Math.max(0,rect.right-x)/edge)*maxSpeed);
+          scrollRef.current.scrollLeft+=speed;
+        }
+      }
+      dr.autoScrollRAF=requestAnimationFrame(step);
+    }
+    dr.autoScrollRAF=requestAnimationFrame(step);
+  }
   const CARD_H=90, PEEK=32;
   const colHeight=group.length===1?CARD_H:CARD_H+(group.length-1)*PEEK;
 
@@ -27,7 +47,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           if(!canMove)return;
           setHovered(i);
           const t=e.touches[0];
-          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false,longPressReady:false};
+          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,lastX:t.clientX,isDragging:false,longPressReady:false,autoScrollRAF:null};
           dr.longPressTimer=setTimeout(()=>{
             dr.longPressReady=true;
             if(navigator.vibrate)navigator.vibrate(15);
@@ -38,6 +58,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
         onTouchMove:e=>{
           const dr=dragRef.current; if(!dr||!dr.box) return;
           const t=e.touches[0];
+          dr.lastX=t.clientX;
           const dx=Math.abs(t.clientX-(dr.touchStartX||0)), dy=Math.abs(t.clientY-(dr.touchStartY||0));
           if(!dr.longPressReady){
             if(dx>8||dy>8){
@@ -51,23 +72,14 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           if(dx>4||dy>4){
             dr.isDragging=true;
             e.preventDefault();
-            if(scrollRef&&scrollRef.current){
-              const rect=scrollRef.current.getBoundingClientRect();
-              const edge=60, maxSpeed=14;
-              if(t.clientX<rect.left+edge){
-                const speed=Math.ceil((1-(t.clientX-rect.left)/edge)*maxSpeed);
-                scrollRef.current.scrollLeft-=speed;
-              }else if(t.clientX>rect.right-edge){
-                const speed=Math.ceil((1-(rect.right-t.clientX)/edge)*maxSpeed);
-                scrollRef.current.scrollLeft+=speed;
-              }
-            }
+            if(!dr.autoScrollRAF) startAutoScroll(dr);
           }
         },
         onTouchEnd:e=>{
           setHovered(-1);
           const dr=dragRef.current;
           if(dr&&dr.longPressTimer) clearTimeout(dr.longPressTimer);
+          if(dr&&dr.autoScrollRAF){cancelAnimationFrame(dr.autoScrollRAF);dr.autoScrollRAF=null;}
           if(!dr||!dr.isDragging){dragRef.current=null;setDraggingId(null);return;}
           const t=e.changedTouches[0];
           let slot=document.elementFromPoint(t.clientX,t.clientY);
