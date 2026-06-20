@@ -46,7 +46,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     }
   }
 
-  return React.createElement("div",{ref:scrollRef,onTouchStart,onTouchMove,style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch"}},
+  return React.createElement("div",{ref:scrollRef,onTouchStart,onTouchMove,style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x",overscrollBehaviorX:"contain"}},
     slots.map((group,slotIdx)=>{
       const isOver=dragOverSlot===slotIdx;
       return React.createElement("div",{
