@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { getValidity } from "../utils/validity.jsx";
 import { DuckIcon } from "./shared.jsx";
 
-export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove}){
+export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef}){
   const [hovered,setHovered]=useState(-1);
   const CARD_H=90, PEEK=32;
   const colHeight=group.length===1?CARD_H:CARD_H+(group.length-1)*PEEK;
@@ -27,8 +27,11 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           if(!canMove)return;
           setHovered(i);
           const t=e.touches[0];
-          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false,longPressReady:false,isScroll:false};
-          dr.longPressTimer=setTimeout(()=>{dr.longPressReady=true;},300);
+          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,isDragging:false,longPressReady:false};
+          dr.longPressTimer=setTimeout(()=>{
+            dr.longPressReady=true;
+            if(navigator.vibrate)navigator.vibrate(15);
+          },220);
           dragRef.current=dr;
           setDraggingId(box.id);
         },
@@ -45,7 +48,21 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
             }
             return;
           }
-          if(dx>8||dy>8){dr.isDragging=true;e.preventDefault();}
+          if(dx>4||dy>4){
+            dr.isDragging=true;
+            e.preventDefault();
+            if(scrollRef&&scrollRef.current){
+              const rect=scrollRef.current.getBoundingClientRect();
+              const edge=60, maxSpeed=14;
+              if(t.clientX<rect.left+edge){
+                const speed=Math.ceil((1-(t.clientX-rect.left)/edge)*maxSpeed);
+                scrollRef.current.scrollLeft-=speed;
+              }else if(t.clientX>rect.right-edge){
+                const speed=Math.ceil((1-(rect.right-t.clientX)/edge)*maxSpeed);
+                scrollRef.current.scrollLeft+=speed;
+              }
+            }
+          }
         },
         onTouchEnd:e=>{
           setHovered(-1);
