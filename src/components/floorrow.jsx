@@ -1,20 +1,32 @@
 import React, { useState, useRef } from "react";
 import StackColumn from "./stackcolumn.jsx";
 
-export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove}){
+export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8;
 
   function buildSlots(boxes){
     const slots=Array(MAX_SLOTS).fill(null);
     const stacks={}, order=[], seen={};
     boxes.forEach(b=>{const key=b.stackId||b.id;if(!seen[key]){seen[key]=true;order.push(key);}if(!stacks[key])stacks[key]=[];stacks[key].push(b);});
-    order.forEach((key,idx)=>{
-      const group=stacks[key].sort((a,b)=>(a.stackOrder||0)-(b.stackOrder||0));
+    const groups=order.map(key=>stacks[key].sort((a,b)=>(a.stackOrder||0)-(b.stackOrder||0)));
+    groups.sort((a,b)=>{
+      const ai=a[0].slotIndex!=null?a[0].slotIndex:999, bi=b[0].slotIndex!=null?b[0].slotIndex:999;
+      if(ai!==bi)return ai-bi;
+      return String(a[0].id).localeCompare(String(b[0].id));
+    });
+    const corrections=[];
+    groups.forEach((group,idx)=>{
       let slotIdx=group[0].slotIndex!=null?group[0].slotIndex:idx;
       if(slotIdx>=MAX_SLOTS)slotIdx=MAX_SLOTS-1;
-      while(slotIdx<MAX_SLOTS&&slots[slotIdx]!==null)slotIdx++;
+      if(slots[slotIdx]!==null){
+        while(slotIdx<MAX_SLOTS&&slots[slotIdx]!==null)slotIdx++;
+        if(slotIdx<MAX_SLOTS) corrections.push({box:group[0],newSlot:slotIdx});
+      }
       if(slotIdx<MAX_SLOTS)slots[slotIdx]=group;
     });
+    if(corrections.length>0&&onFixSlot){
+      corrections.forEach(c=>onFixSlot(c.box,c.newSlot));
+    }
     return slots;
   }
 
