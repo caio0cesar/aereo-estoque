@@ -94,7 +94,7 @@ export const db = {
   async corridors()   { return query(supabase.from("corridors").select("*").order("number")); },
   async bays()        { return query(supabase.from("bays").select("*").order("number")); },
   async floors()      { return query(supabase.from("floors").select("*").order("number")); },
-  async boxes()       { return query(supabase.from("boxes").select("*")); },
+  async boxes()       { return query(supabase.from("boxes").select("*").order("floor_id").order("slot_index").order("stack_order")); },
   async products()    { return query(supabase.from("products").select("*").order("sku")); },
 
   async upsertSector(s)   { return mutate(supabase.from("sectors").upsert(s)); },
