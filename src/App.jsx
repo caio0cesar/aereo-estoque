@@ -169,6 +169,7 @@ if(session===undefined) return React.createElement("div",{style:{background:"#07
   return React.createElement(React.Fragment,null,
     React.createElement("style",null,css),
     screen.type==="home"&&React.createElement(HomeScreen,{data,
+      onNavigate:handleNavigate,
       onSelectSector:id=>nav({type:"sector",sectorId:id}),
       onOpenProducts:()=>nav({type:"products"}),
       onOpenValidity:()=>nav({type:"validity"}),
