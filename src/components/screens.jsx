@@ -83,8 +83,9 @@ export function ValidityScreen({data,onBack,onNavigate}){
   );
 }
 
-export function SearchOverlay({data,onClose,onNavigate}){
+export function SearchOverlay({data,onClose,onNavigate,onSaveProduct,onDeleteProduct,onConfirmDelete,profile}){
   const [query,setQuery]=useState("");
+  const [editModal,setEditModal]=useState(null);
   const inputRef=useRef(null);
   useEffect(()=>{setTimeout(()=>inputRef.current&&inputRef.current.focus(),100);},[]);
   const products=data.products||{};
@@ -119,12 +120,18 @@ export function SearchOverlay({data,onClose,onNavigate}){
         React.createElement("div",{style:{fontSize:13}},"Digite o SKU ou nome do produto")
       ),
       results.map((r,i)=>React.createElement("div",{key:i,className:"fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:10}},
-        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
-          React.createElement(Tag,null,r.sku),
-          React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:r.product&&r.product.desc?4:0}},
+              React.createElement(Tag,null,r.sku),
+              React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
+            ),
+            r.product&&r.product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:2,lineHeight:1.4}},r.product.desc),
+            r.product&&r.product.fornecedor&&React.createElement("div",{style:{fontSize:11,color:C.muted}},r.product.fornecedor)
+          ),
+          r.product&&isProOperator(profile)&&React.createElement("button",{onClick:()=>setEditModal({product:r.product}),style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,color:C.muted,borderRadius:7,padding:"4px 8px",fontSize:11,flexShrink:0,marginLeft:8}},"✏️")
         ),
-        r.product&&r.product.desc&&React.createElement("div",{style:{fontSize:12,color:C.text,marginBottom:4}},r.product.desc),
-        r.product&&r.product.fornecedor&&React.createElement("div",{style:{fontSize:11,color:C.muted,marginBottom:8}},r.product.fornecedor),
+        React.createElement("div",{style:{marginTop:6}},
         r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>{onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id});onClose();},className:"ch",
           style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:4,textAlign:"left"}},
           React.createElement("div",null,
