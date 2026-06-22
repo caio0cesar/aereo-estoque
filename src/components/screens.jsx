@@ -120,9 +120,9 @@ export function SearchOverlay({data,onClose,onNavigate,onSaveProduct,onDeletePro
         React.createElement("div",{style:{fontSize:13}},"Digite o SKU ou nome do produto")
       ),
       results.map((r,i)=>React.createElement("div",{key:i,className:"fin",style:{background:"rgba(255,255,255,0.05)",border:"1px solid "+C.border,borderRadius:12,padding:12,marginBottom:10}},
-        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}},
           React.createElement("div",{style:{flex:1,minWidth:0}},
-            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:r.product&&r.product.desc?4:0}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
               React.createElement(Tag,null,r.sku),
               React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
             ),
@@ -131,16 +131,23 @@ export function SearchOverlay({data,onClose,onNavigate,onSaveProduct,onDeletePro
           ),
           r.product&&isProOperator(profile)&&React.createElement("button",{onClick:()=>setEditModal({product:r.product}),style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+C.border,color:C.muted,borderRadius:7,padding:"4px 8px",fontSize:11,flexShrink:0,marginLeft:8}},"✏️")
         ),
-        React.createElement("div",{style:{marginTop:6}},
-        r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>{onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id});onClose();},className:"ch",
-          style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:4,textAlign:"left"}},
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontSize:11,color:C.text,fontWeight:600}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" ("+l.bay.side.slice(0,3)+".) · Andar "+l.fl.number),
-            React.createElement("div",{style:{fontSize:10,color:C.muted,marginTop:2}},"Qtd: "+l.box.qty+(l.box.updatedBy?" · "+l.box.updatedBy:"")+" · "+l.box.date)
-          ),
-          React.createElement("span",{style:{color:C.accent,fontSize:18,marginLeft:8}},"›")
-        ))
-      ))
+        React.createElement("div",null,
+          r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>{onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id});onClose();},className:"ch",
+            style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:4,textAlign:"left"}},
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:11,color:C.text,fontWeight:600}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" ("+l.bay.side.slice(0,3)+".) · Andar "+l.fl.number),
+              React.createElement("div",{style:{fontSize:10,color:C.muted,marginTop:2}},"Qtd: "+l.box.qty+(l.box.updatedBy?" · "+l.box.updatedBy:"")+" · "+l.box.date)
+            ),
+            React.createElement("span",{style:{color:C.accent,fontSize:18,marginLeft:8}},"›")
+          ))
+        )
+      )),
+      editModal&&React.createElement(ProductModal,{
+        product:editModal.product,
+        onSave:p=>{onSaveProduct(p);setEditModal(null);},
+        onClose:()=>setEditModal(null),
+        onDelete:editModal.product?()=>onConfirmDelete("Excluir produto "+editModal.product.sku+"?",()=>{onDeleteProduct(editModal.product.sku);setEditModal(null);}):undefined,
+      })
     )
   );
 }
