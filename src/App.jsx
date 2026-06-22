@@ -200,7 +200,7 @@ if(session===undefined) return React.createElement("div",{style:{background:"#07
       registerUndo("Produto excluído", ()=>db.deleteProduct(sku));
     },...sharedProps}),
     screen.type==="validity"&&React.createElement(ValidityScreen,{data,onBack:back,onNavigate:handleNavigate}),
-    showSearch&&React.createElement(SearchOverlay,{data,onClose:()=>setShowSearch(false),onNavigate:v=>{handleNavigate(v);setShowSearch(false);}}),
+    showSearch&&React.createElement(SearchOverlay,{data,onClose:()=>setShowSearch(false),onNavigate:v=>{handleNavigate(v);setShowSearch(false);},onSaveProduct:saveProduct,onDeleteProduct:deleteProduct,onConfirmDelete:confirmDelete,profile}),
     confirmState&&React.createElement(ConfirmModal,{msg:confirmState.msg,onConfirm:()=>{confirmState.onConfirm();setConfirmState(null);},onCancel:()=>setConfirmState(null)}),
     undoState&&React.createElement(UndoToast,{msg:undoState.msg,onUndo:doUndo,onDismiss:()=>{setUndoState(null);clearTimeout(undoTimerRef.current);}})
   );
