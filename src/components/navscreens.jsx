@@ -252,7 +252,7 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUp
 }
 
 // --- HomeScreen ---
-export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,onOpenOperators,onOpenProfile,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout,onBackup}){
+export function HomeScreen({data,onSelectSector,onNavigate,onOpenProducts,onOpenValidity,onOpenOperators,onOpenProfile,onAddSector,onEditSector,onDeleteSector,onConfirmDelete,onRegisterUndo,profile,onLogout,onBackup}){
   const [sectorModal,setSectorModal]=useState(null);
   const [confirmLogout,setConfirmLogout]=useState(false);
   const [search,setSearch]=useState("");
@@ -297,8 +297,11 @@ export function HomeScreen({data,onSelectSector,onOpenProducts,onOpenValidity,on
             React.createElement(Tag,null,r.sku),
             React.createElement(Tag,{bg:"rgba(255,255,255,0.06)",color:C.dim},r.locations.length+" local(is)")
           ),
-          r.product&&r.product.desc&&React.createElement("div",{style:{fontSize:11,color:C.text,marginBottom:4}},r.product.desc),
-          r.locations.map((l,j)=>React.createElement("div",{key:j,style:{fontSize:10,color:C.muted,padding:"2px 0"}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" · Andar "+l.fl.number+" · Qtd: "+l.box.qty))
+          r.product&&r.product.desc&&React.createElement("div",{style:{fontSize:11,color:C.text,marginBottom:6}},r.product.desc),
+          r.locations.map((l,j)=>React.createElement("button",{key:j,onClick:()=>onNavigate({corridorId:l.cor.id,bayId:l.bay.id,boxId:l.box.id}),className:"ch",style:{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"rgba(29,209,161,0.06)",border:"1px solid rgba(29,209,161,0.15)",borderRadius:8,padding:"6px 10px",marginBottom:4,textAlign:"left"}},
+            React.createElement("div",{style:{fontSize:10,color:C.text}},"📍 C"+l.cor.number+" · Bay "+l.bay.number+" · Andar "+l.fl.number+" · Qtd: "+l.box.qty),
+            React.createElement("span",{style:{color:C.accent,fontSize:14}},"›")
+          ))
         ))
       )
     ),
