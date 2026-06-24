@@ -32,10 +32,54 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
 
   const slots=buildSlots(floor.boxes);
   const [dragOverSlot,setDragOverSlot]=useState(-1);
-  const scrollRef=useRef(null), touchStartX=useRef(0), touchScrollLeft=useRef(0), touchDragging=useRef(false);
+  const scrollRef=useRef(null);
+  const scrollTouchId=useRef(null);
+  const touchStartX=useRef(0);
+  const touchScrollLeft=useRef(0);
+  const touchDragging=useRef(false);
 
-  function onTouchStart(e){if(dragRef.current&&dragRef.current.isDragging)return;touchStartX.current=e.touches[0].clientX;touchScrollLeft.current=scrollRef.current?scrollRef.current.scrollLeft:0;touchDragging.current=false;}
-  function onTouchMove(e){if(dragRef.current&&dragRef.current.isDragging)return;const dx=touchStartX.current-e.touches[0].clientX;if(Math.abs(dx)>6)touchDragging.current=true;if(touchDragging.current&&scrollRef.current)scrollRef.current.scrollLeft=touchScrollLeft.current+dx;}
+  function getScrollTouch(touches){
+    const dr=dragRef.current;
+    for(let k=0;k<touches.length;k++){
+      const t=touches[k];
+      if(dr&&dr.touchId!=null&&t.identifier===dr.touchId) continue;
+      return t;
+    }
+    return null;
+  }
+
+  function onTouchStart(e){
+    const t=getScrollTouch(e.touches);
+    if(!t) return;
+    scrollTouchId.current=t.identifier;
+    touchStartX.current=t.clientX;
+    touchScrollLeft.current=scrollRef.current?scrollRef.current.scrollLeft:0;
+    touchDragging.current=false;
+  }
+
+  function onTouchMove(e){
+    if(scrollTouchId.current==null) return;
+    let t=null;
+    for(let k=0;k<e.touches.length;k++){
+      if(e.touches[k].identifier===scrollTouchId.current){t=e.touches[k];break;}
+    }
+    if(!t) return;
+    const dr=dragRef.current;
+    if(dr&&dr.isDragging&&t.identifier===dr.touchId) return;
+    const dx=touchStartX.current-t.clientX;
+    if(Math.abs(dx)>6) touchDragging.current=true;
+    if(touchDragging.current&&scrollRef.current) scrollRef.current.scrollLeft=touchScrollLeft.current+dx;
+  }
+
+  function onTouchEnd(e){
+    for(let k=0;k<e.changedTouches.length;k++){
+      if(e.changedTouches[k].identifier===scrollTouchId.current){
+        scrollTouchId.current=null;
+        touchDragging.current=false;
+        break;
+      }
+    }
+  }
 
   function dropOnSlot(slotIdx){
     const dr=dragRef.current; if(!dr)return;
@@ -58,7 +102,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     }
   }
 
-  return React.createElement("div",{ref:scrollRef,onTouchStart,onTouchMove,style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x",overscrollBehaviorX:"contain"}},
+  return React.createElement("div",{ref:scrollRef,onTouchStart,onTouchMove,onTouchEnd,style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x",overscrollBehaviorX:"contain"}},
     slots.map((group,slotIdx)=>{
       const isOver=dragOverSlot===slotIdx;
       return React.createElement("div",{
