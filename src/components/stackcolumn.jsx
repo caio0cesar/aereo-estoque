@@ -24,6 +24,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
     }
     dr.autoScrollRAF=requestAnimationFrame(step);
   }
+
   const CARD_H=90, PEEK=32;
   const colHeight=group.length===1?CARD_H:CARD_H+(group.length-1)*PEEK;
 
@@ -47,7 +48,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           if(!canMove)return;
           setHovered(i);
           const t=e.touches[0];
-          const dr={box,fromFloorId:floorId,touchStartX:t.clientX,touchStartY:t.clientY,lastX:t.clientX,isDragging:false,longPressReady:false,autoScrollRAF:null};
+          const dr={box,fromFloorId:floorId,touchId:t.identifier,touchStartX:t.clientX,touchStartY:t.clientY,lastX:t.clientX,isDragging:false,longPressReady:false,autoScrollRAF:null};
           dr.longPressTimer=setTimeout(()=>{
             dr.longPressReady=true;
             if(navigator.vibrate)navigator.vibrate(15);
@@ -57,7 +58,9 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
         },
         onTouchMove:e=>{
           const dr=dragRef.current; if(!dr||!dr.box) return;
-          const t=e.touches[0];
+          let t=null;
+          for(let k=0;k<e.touches.length;k++){if(e.touches[k].identifier===dr.touchId){t=e.touches[k];break;}}
+          if(!t) return;
           dr.lastX=t.clientX;
           const dx=Math.abs(t.clientX-(dr.touchStartX||0)), dy=Math.abs(t.clientY-(dr.touchStartY||0));
           if(!dr.longPressReady){
@@ -76,12 +79,19 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           }
         },
         onTouchEnd:e=>{
-          setHovered(-1);
           const dr=dragRef.current;
+          let dragTouchLifted=false;
+          for(let k=0;k<e.changedTouches.length;k++){
+            if(dr&&e.changedTouches[k].identifier===dr.touchId){dragTouchLifted=true;break;}
+          }
+          if(!dragTouchLifted) return;
+          setHovered(-1);
           if(dr&&dr.longPressTimer) clearTimeout(dr.longPressTimer);
           if(dr&&dr.autoScrollRAF){cancelAnimationFrame(dr.autoScrollRAF);dr.autoScrollRAF=null;}
           if(!dr||!dr.isDragging){dragRef.current=null;setDraggingId(null);return;}
-          const t=e.changedTouches[0];
+          let t=null;
+          for(let k=0;k<e.changedTouches.length;k++){if(e.changedTouches[k].identifier===dr.touchId){t=e.changedTouches[k];break;}}
+          if(!t){dragRef.current=null;setDraggingId(null);return;}
           let slot=document.elementFromPoint(t.clientX,t.clientY);
           let slotIdx=-1;
           while(slot&&slot!==document.body){
