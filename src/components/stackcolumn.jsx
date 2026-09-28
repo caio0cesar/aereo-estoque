@@ -2,105 +2,53 @@ import React, { useState } from "react";
 import { getValidity } from "../utils/validity.jsx";
 import { DuckIcon } from "./shared.jsx";
 
-export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef}){
+// Em celular (toque) o arraste é feito pelo FloorRow com Pointer Events.
+// O drag nativo do HTML5 fica só para mouse, senão o Chrome Android pode iniciar
+// um drag próprio no long-press e cancelar o nosso.
+const FINE_POINTER = typeof window!=="undefined"&&window.matchMedia
+  ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
+  : true;
+
+export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef,previewGv}){
   const [hovered,setHovered]=useState(-1);
 
-  function startAutoScroll(dr){
-    function step(){
-      if(!dragRef.current||dragRef.current!==dr||!dr.isDragging){dr.autoScrollRAF=null;return;}
-      if(scrollRef&&scrollRef.current){
-        const rect=scrollRef.current.getBoundingClientRect();
-        const edge=70, maxSpeed=12;
-        const x=dr.lastX;
-        if(x<rect.left+edge){
-          const speed=Math.ceil((1-Math.max(0,x-rect.left)/edge)*maxSpeed);
-          scrollRef.current.scrollLeft-=speed;
-        }else if(x>rect.right-edge){
-          const speed=Math.ceil((1-Math.max(0,rect.right-x)/edge)*maxSpeed);
-          scrollRef.current.scrollLeft+=speed;
-        }
-      }
-      dr.autoScrollRAF=requestAnimationFrame(step);
-    }
-    dr.autoScrollRAF=requestAnimationFrame(step);
-  }
-
   const CARD_H=90, PEEK=32;
-  const colHeight=group.length===1?CARD_H:CARD_H+(group.length-1)*PEEK;
+
+  // Linhas de cima para baixo: topo = maior stackOrder (atrás), embaixo = menor (na frente).
+  // Durante o preview, a caixa que está sendo arrastada sai da pilha e entra um espaço tracejado (null).
+  const hasPreview=previewGv!=null;
+  const list=hasPreview?group.filter(b=>b.id!==draggingId):group;
+  const rows=[...list].reverse();
+  if(hasPreview)rows.splice(Math.min(previewGv,rows.length),0,null);
+  const N=rows.length;
+  const colHeight=N<=1?CARD_H:CARD_H+(N-1)*PEEK;
 
   return React.createElement("div",{
-    style:{position:"relative",width:116,flexShrink:0,height:colHeight,marginRight:6},
+    style:{position:"relative",width:116,flexShrink:0,height:colHeight,marginRight:6,transition:"height 0.18s ease"},
     onDragOver:e=>e.preventDefault(),
     onDrop:e=>{e.preventDefault();e.stopPropagation();if(dragRef.current)onDropOnStack(group[0].id,floorId);}
   },
-    [...group].reverse().map((box,ri)=>{
-      const i=group.length-1-ri;
+    rows.map((box,r)=>{
+      const topOffset=r*PEEK;
+
+      if(!box){
+        return React.createElement("div",{key:"__gap",style:{
+          position:"absolute",top:topOffset,left:0,width:"100%",height:CARD_H,boxSizing:"border-box",
+          border:"2px dashed #1dd1a1",borderRadius:10,background:"rgba(29,209,161,0.10)",
+          zIndex:r+1,pointerEvents:"none",transition:"top 0.18s ease"
+        }},
+          React.createElement("div",{style:{padding:"5px 8px",fontSize:9,fontWeight:700,color:"#1dd1a1"}},"solte aqui")
+        );
+      }
+
       const vi=getValidity(box.validade);
-      const isFront=i===0, isHov=hovered===i;
-      const topOffset=(group.length-1-i)*PEEK;
+      const isFront=r===N-1, isHov=hovered===r;
       return React.createElement("div",{
-        key:box.id, draggable:!!canMove,
+        key:box.id, "data-boxid":box.id, draggable:!!canMove&&FINE_POINTER,
         onDragStart:e=>{if(!canMove)return;dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);e.dataTransfer.effectAllowed="move";},
         onDragEnd:()=>{dragRef.current=null;setDraggingId(null);},
         onDragOver:e=>{if(!canMove)return;e.preventDefault();e.dataTransfer.dropEffect="move";},
-        onMouseEnter:()=>setHovered(i), onMouseLeave:()=>setHovered(-1),
-        onTouchStart:e=>{
-          if(!canMove)return;
-          setHovered(i);
-          const t=e.touches[0];
-          const dr={box,fromFloorId:floorId,touchId:t.identifier,touchStartX:t.clientX,touchStartY:t.clientY,lastX:t.clientX,isDragging:false,longPressReady:false,autoScrollRAF:null};
-          dr.longPressTimer=setTimeout(()=>{
-            dr.longPressReady=true;
-            if(navigator.vibrate)navigator.vibrate(15);
-          },220);
-          dragRef.current=dr;
-          setDraggingId(box.id);
-        },
-        onTouchMove:e=>{
-          const dr=dragRef.current; if(!dr||!dr.box) return;
-          let t=null;
-          for(let k=0;k<e.touches.length;k++){if(e.touches[k].identifier===dr.touchId){t=e.touches[k];break;}}
-          if(!t) return;
-          dr.lastX=t.clientX;
-          const dx=Math.abs(t.clientX-(dr.touchStartX||0)), dy=Math.abs(t.clientY-(dr.touchStartY||0));
-          if(!dr.longPressReady){
-            if(dx>8||dy>8){
-              clearTimeout(dr.longPressTimer);
-              setHovered(-1);
-              dragRef.current=null;
-              setDraggingId(null);
-            }
-            return;
-          }
-          if(dx>4||dy>4){
-            dr.isDragging=true;
-            e.preventDefault();
-            if(!dr.autoScrollRAF) startAutoScroll(dr);
-          }
-        },
-        onTouchEnd:e=>{
-          const dr=dragRef.current;
-          let dragTouchLifted=false;
-          for(let k=0;k<e.changedTouches.length;k++){
-            if(dr&&e.changedTouches[k].identifier===dr.touchId){dragTouchLifted=true;break;}
-          }
-          if(!dragTouchLifted) return;
-          setHovered(-1);
-          if(dr&&dr.longPressTimer) clearTimeout(dr.longPressTimer);
-          if(dr&&dr.autoScrollRAF){cancelAnimationFrame(dr.autoScrollRAF);dr.autoScrollRAF=null;}
-          if(!dr||!dr.isDragging){dragRef.current=null;setDraggingId(null);return;}
-          let t=null;
-          for(let k=0;k<e.changedTouches.length;k++){if(e.changedTouches[k].identifier===dr.touchId){t=e.changedTouches[k];break;}}
-          if(!t){dragRef.current=null;setDraggingId(null);return;}
-          let slot=document.elementFromPoint(t.clientX,t.clientY);
-          let slotIdx=-1;
-          while(slot&&slot!==document.body){
-            if(slot.dataset&&slot.dataset.slotidx!=null){slotIdx=parseInt(slot.dataset.slotidx);break;}
-            slot=slot.parentElement;
-          }
-          if(slotIdx>=0) onDropOnStack(null,floorId,slotIdx);
-          else{dragRef.current=null;setDraggingId(null);}
-        },
+        onMouseEnter:()=>setHovered(r), onMouseLeave:()=>setHovered(-1),
         onClick:e=>{e.stopPropagation();onClickBox(box);},
         style:{
           position:"absolute", top:topOffset, left:0, width:"100%", height:CARD_H,
@@ -108,10 +56,12 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)"),
           borderRadius:10, padding:"8px 9px", cursor:canMove?"grab":"pointer", overflow:"hidden",
           transform:"translateY("+(isHov?-10:0)+"px)",
-          transition:"transform 0.18s ease, box-shadow 0.18s",
-          zIndex:isHov?100:group.length-i,
+          transition:"transform 0.18s ease, top 0.18s ease, box-shadow 0.18s, opacity 0.15s",
+          zIndex:isHov?100:r+1,
+          opacity:draggingId===box.id?0.35:1,
           boxShadow:isHov?"0 8px 20px rgba(0,0,0,0.8)":isFront?"0 4px 14px rgba(0,0,0,0.6)":"0 2px 6px rgba(0,0,0,0.5)",
-          userSelect:"none",
+          userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none",
+          touchAction:canMove?"none":undefined,
         }
       },
         React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
