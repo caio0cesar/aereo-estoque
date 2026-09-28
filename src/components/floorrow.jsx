@@ -2,6 +2,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import StackColumn from "./stackcolumn.jsx";
 
+// Registro de todos os andares montados: permite que o dedo que segura a caixa
+// enxergue e solte em QUALQUER andar, não só no andar de origem.
+const FLOORS=new Map();
+
+// Primeiro ancestral com scroll vertical (null = a própria janela)
+function scrollParent(el){
+  let p=el&&el.parentElement;
+  while(p&&p!==document.body){
+    const s=getComputedStyle(p);
+    if(/(auto|scroll)/.test(s.overflowY)&&p.scrollHeight>p.clientHeight+2)return p;
+    p=p.parentElement;
+  }
+  return null;
+}
+
 export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8, CARD_H=90, PEEK=32;
 
@@ -32,24 +47,33 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   }
 
   const slots=buildSlots(floor.boxes);
+  const fid=String(floor.id);
   const [dragOverSlot,setDragOverSlot]=useState(-1);
-  const [preview,setPreview]=useState(null);      // {slot,gv} enquanto arrasta no toque
+  const [preview,setPreview]=useState(null);      // {slot,gv} neste andar enquanto alguém arrasta por cima
   const [ghostBox,setGhostBox]=useState(null);
   const scrollRef=useRef(null);
   const slotsRef=useRef(slots);
-  const previewRef=useRef(null);
+  const previewRef=useRef(null);                  // alvo atual do arraste que ESTE andar iniciou: {floorId,slot,gv}
   const ptrs=useRef(new Map());                   // pointerId -> registro do dedo
   const ghostRef=useRef(null);
   const ghostPos=useRef({x:0,y:0});
   const autoRef=useRef(null);
   const flingRef=useRef(null);
+  const vScrollRef=useRef(null);
   const lastGesture=useRef(0);
   slotsRef.current=slots;
 
   // ---------- helpers ----------
   function lockScroll(on){if(scrollRef.current)scrollRef.current.style.touchAction=on?"none":"pan-x";}
-  function setPrev(p){previewRef.current=p;setPreview(p);}
-  function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&a.slot===b.slot&&a.gv===b.gv);}
+  function lockAll(on){FLOORS.forEach(r=>r.lock(on));}
+  function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&a.floorId===b.floorId&&a.slot===b.slot&&a.gv===b.gv);}
+  // Mostra/limpa o espaço de inserção no andar certo
+  function applyPreview(t){
+    const old=previewRef.current;
+    if(old&&(!t||old.floorId!==t.floorId)){const r=FLOORS.get(old.floorId);if(r)r.setPreview(null);}
+    if(t){const r=FLOORS.get(t.floorId);if(r)r.setPreview({slot:t.slot,gv:t.gv});}
+    previewRef.current=t;
+  }
   function placeGhost(x,y){ghostPos.current={x,y};const g=ghostRef.current;if(g){g.style.left=x+"px";g.style.top=y+"px";}}
   function stopAuto(){if(autoRef.current){clearInterval(autoRef.current);autoRef.current=null;}}
   function cancelFling(){if(flingRef.current){cancelAnimationFrame(flingRef.current);flingRef.current=null;}}
@@ -67,17 +91,22 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     flingRef.current=requestAnimationFrame(step);
   }
 
-  // Descobre em qual slot o dedo está e em qual posição da pilha inserir.
+  // Descobre em qual andar/slot o dedo está e em qual posição da pilha inserir.
   // gv = posição visual (0 = topo/atrás, n = embaixo/na frente), calculada sem contar o espaço de preview
   // para o resultado não "tremer" quando o espaço se abre.
   function targetAt(x,y){
     const el=document.elementFromPoint(x,y);
     const slotEl=el&&el.closest?el.closest("[data-slotidx]"):null;
-    if(!slotEl||!scrollRef.current||!scrollRef.current.contains(slotEl))return null;
+    if(!slotEl)return null;
+    const host=slotEl.closest("[data-floorid]");
+    if(!host)return null;
+    const floorId=host.getAttribute("data-floorid");
+    const reg=FLOORS.get(floorId);
+    if(!reg)return null;
     const slot=parseInt(slotEl.getAttribute("data-slotidx"),10);
-    const dr=dragRef.current, group=slotsRef.current[slot];
+    const dr=dragRef.current, group=reg.getSlots()[slot];
     const n=group?group.filter(b=>!(dr&&dr.box&&b.id===dr.box.id)).length:0;
-    if(n===0)return{slot,gv:0};
+    if(n===0)return{floorId,slot,gv:0};
     const rel=y-slotEl.getBoundingClientRect().top;
     let gv;
     if(rel<=0)gv=0;
@@ -85,23 +114,40 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       const r=Math.floor(rel/PEEK);
       gv=r<n-1?r:((rel-(n-1)*PEEK)<CARD_H/2?n-1:n);
     }
-    return{slot,gv};
+    return{floorId,slot,gv};
   }
   function updateTarget(x,y){
     const t=targetAt(x,y);
-    if(!samePrev(t,previewRef.current))setPrev(t);
+    if(!samePrev(t,previewRef.current))applyPreview(t);
   }
 
   function autoTick(){
     const dr=dragRef.current;
-    if(!dr||!dr.touch||ptrs.current.size>1)return;   // com 2 dedos, o 2º dedo é quem rola
+    if(!dr||!dr.touch)return;
     const r=ptrs.current.get(dr.pointerId);
-    if(!r||!scrollRef.current)return;
-    const b=scrollRef.current.getBoundingClientRect(), edge=70, max=12;
-    let v=0;
-    if(r.cx<b.left+edge)v=-Math.ceil((1-Math.max(0,r.cx-b.left)/edge)*max);
-    else if(r.cx>b.right-edge)v=Math.ceil((1-Math.max(0,b.right-r.cx)/edge)*max);
-    if(v){scrollRef.current.scrollLeft+=v;updateTarget(r.cx,r.cy);}
+    if(!r)return;
+    let moved=false;
+    // vertical: rola a tela para alcançar outros andares
+    const sp=vScrollRef.current;
+    const vb=sp?sp.getBoundingClientRect():{top:0,bottom:window.innerHeight};
+    const vEdge=90, vMax=14;
+    let vy=0;
+    if(r.cy<vb.top+vEdge)vy=-Math.ceil((1-Math.max(0,r.cy-vb.top)/vEdge)*vMax);
+    else if(r.cy>vb.bottom-vEdge)vy=Math.ceil((1-Math.max(0,vb.bottom-r.cy)/vEdge)*vMax);
+    if(vy){if(sp)sp.scrollTop+=vy;else window.scrollBy(0,vy);moved=true;}
+    // horizontal (só com 1 dedo): no andar que está sob o dedo
+    if(ptrs.current.size<=1){
+      const el=document.elementFromPoint(r.cx,r.cy);
+      const host=(el&&el.closest?el.closest("[data-floorid]"):null)||scrollRef.current;
+      if(host){
+        const b=host.getBoundingClientRect(), edge=70, max=12;
+        let v=0;
+        if(r.cx<b.left+edge)v=-Math.ceil((1-Math.max(0,r.cx-b.left)/edge)*max);
+        else if(r.cx>b.right-edge)v=Math.ceil((1-Math.max(0,b.right-r.cx)/edge)*max);
+        if(v){host.scrollLeft+=v;moved=true;}
+      }
+    }
+    if(moved)updateTarget(r.cx,r.cy);
   }
 
   function startDrag(rec){
@@ -111,9 +157,10 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     if(!box)return;
     dragRef.current={box,fromFloorId:floor.id,pointerId:rec.id,touch:true};
     setDraggingId(box.id);
-    lockScroll(true);                                   // novos toques (2º dedo) ficam sob controle do JS
+    lockAll(true);                                      // novos toques (2º dedo) ficam sob controle do JS em qualquer andar
     try{scrollRef.current.setPointerCapture(rec.id);}catch(_){}
     if(navigator.vibrate)navigator.vibrate(15);
+    vScrollRef.current=scrollParent(scrollRef.current);
     placeGhost(rec.cx,rec.cy);
     setGhostBox(box);
     updateTarget(rec.cx,rec.cy);
@@ -155,7 +202,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       if(r.t){clearTimeout(r.t);r.t=null;}
     }
     if(!r.manual)return;
-    if(r.pan||dragging){                             // outro dedo: rola o andar na mão
+    if(r.pan||dragging){                             // outro dedo: rola o andar em que ele encostou, na mão
       r.pan=true;
       if(scrollRef.current)scrollRef.current.scrollLeft-=dx;
       const dt=Math.max(1,e.timeStamp-r.lt);
@@ -172,11 +219,12 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     const dr=dragRef.current;
     if(dr&&dr.touch&&dr.pointerId===e.pointerId){
       lastGesture.current=Date.now();
-      stopAuto();lockScroll(false);
+      stopAuto();lockAll(false);
       setGhostBox(null);setDraggingId(null);
       const p=previewRef.current;
-      setPrev(null);
-      if(e.type==="pointerup"&&p)dropOnSlot(p.slot,p.gv);
+      applyPreview(null);
+      const reg=p?FLOORS.get(p.floorId):null;
+      if(e.type==="pointerup"&&p&&reg)reg.drop(p.slot,p.gv);   // solta no andar de destino (pode ser outro andar)
       else dragRef.current=null;
       return;
     }
@@ -188,19 +236,11 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     }
   }
 
-  useEffect(()=>()=>{stopAuto();cancelFling();},[]);
-
-  // Ignora o "click" que o navegador dispara logo depois de arrastar/rolar
-  function safeClick(b){
-    if(Date.now()-lastGesture.current<350)return;
-    onClickBox(b);
-  }
-
   // ---------- soltar ----------
   // gv: posição visual (0 = topo/atrás ... n = embaixo/na frente). Sem gv (mouse): entra atrás, como antes.
   function dropOnSlot(slotIdx,gv){
     const dr=dragRef.current; if(!dr)return;
-    dragRef.current=null; setDragOverSlot(-1); setPrev(null);
+    dragRef.current=null; setDragOverSlot(-1); setPreview(null);
     const draggedBox=dr.box;
     const inSlot=slots[slotIdx];
     const others=inSlot?inSlot.filter(b=>b.id!==draggedBox.id):[];   // já em ordem crescente de stackOrder
@@ -223,8 +263,19 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     }
   }
 
+  // Registra este andar (sempre com as funções mais recentes) e limpa ao desmontar
+  FLOORS.set(fid,{getSlots:()=>slotsRef.current,setPreview,lock:lockScroll,drop:dropOnSlot});
+  useEffect(()=>()=>{FLOORS.delete(fid);},[fid]);
+  useEffect(()=>()=>{stopAuto();cancelFling();},[]);
+
+  // Ignora o "click" que o navegador dispara logo depois de arrastar/rolar
+  function safeClick(b){
+    if(Date.now()-lastGesture.current<350)return;
+    onClickBox(b);
+  }
+
   const scroller=React.createElement("div",{
-    ref:scrollRef,
+    ref:scrollRef,"data-floorid":fid,
     onPointerDown,onPointerMove,onPointerUp:onPointerEnd,onPointerCancel:onPointerEnd,
     style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x",overscrollBehaviorX:"contain"}
   },
@@ -239,7 +290,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
         onDrop:e=>{e.preventDefault();e.stopPropagation();dropOnSlot(slotIdx);},
         style:{flexShrink:0,width:SLOT_W,height:group?(CARD_H+(Math.max(rowsN,1)-1)*PEEK):SLOT_H,minHeight:SLOT_H,border:isOver?"2px dashed #1dd1a1":(group?"none":"1px dashed rgba(255,255,255,0.07)"),borderRadius:12,background:isOver?"rgba(29,209,161,0.06)":"transparent",position:"relative",transition:"border-color 0.15s, background 0.15s"}
       },
-        group&&React.createElement(StackColumn,{group,mascot,products,onClickBox:safeClick,dragRef,draggingId,setDraggingId,floorId:floor.id,canMove,scrollRef,previewGv,onDropOnStack:(targetBoxId,fid,touchSlotIdx)=>dropOnSlot(touchSlotIdx!=null?touchSlotIdx:slotIdx)}),
+        group&&React.createElement(StackColumn,{group,mascot,products,onClickBox:safeClick,dragRef,draggingId,setDraggingId,floorId:floor.id,canMove,scrollRef,previewGv,onDropOnStack:(targetBoxId,fid2,touchSlotIdx)=>dropOnSlot(touchSlotIdx!=null?touchSlotIdx:slotIdx)}),
         !group&&isOver&&React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#1dd1a1",fontWeight:600}},"Soltar aqui")
       );
     })
