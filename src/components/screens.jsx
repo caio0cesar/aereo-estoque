@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { C, Tag, Gap, isProOperator } from "./shared.jsx";
+import { C, Tag, Gap, isProOperator, tokenMatch } from "./shared.jsx";
 import ProductModal from "./productmodal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { parsePrice, findBySku } from "../utils/dates.jsx";
