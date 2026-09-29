@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon, isEndministrator, isProOperator, isOperator, getRoleLabel, tokenMatch } from "./shared.jsx";
+import FloorRow from "./floorrow.jsx";
 import { BoxDetailModal, BoxEditModal } from "./boxmodal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.jsx";
