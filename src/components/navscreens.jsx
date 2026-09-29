@@ -197,7 +197,7 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onHo
   if(selectedCorridorId){
     const cor=corridors.find(c=>c.id===selectedCorridorId);
     if(!cor){setSelectedCorridorId(null);return null;}
-    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),highlightBayId,highlightBoxId,onUpdateCorridor,onSyncBoxes,onConfirmDelete,onRegisterUndo,profile});
+    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),onHome,highlightBayId,highlightBoxId,onUpdateCorridor,onSyncBoxes,onConfirmDelete,onRegisterUndo,profile});
   }
 
   function handleCorridorSave(number){
