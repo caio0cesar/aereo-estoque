@@ -64,8 +64,11 @@ export function DuckIcon({size=40}){
   return React.createElement("img",{src:"/duck.png",width:size,height:size,style:{objectFit:"contain"}});
 }
 
+const STOPWORDS=new Set(["de","da","do","das","dos","e","a","o","as","os","em","para","com","sem","um","uma"]);
 export function tokenMatch(text, query){
   if(!text) return false;
   const t=text.toLowerCase();
-  return query.toLowerCase().split(/\s+/).filter(Boolean).every(w=>t.includes(w));
+  const words=query.toLowerCase().split(/\s+/).filter(w=>w&&!STOPWORDS.has(w));
+  if(words.length===0) return true;
+  return words.every(w=>t.includes(w));
 }
