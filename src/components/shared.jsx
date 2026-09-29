@@ -63,3 +63,9 @@ export function UndoToast({msg,onUndo,onDismiss}){
 export function DuckIcon({size=40}){
   return React.createElement("img",{src:"/duck.png",width:size,height:size,style:{objectFit:"contain"}});
 }
+
+export function tokenMatch(text, query){
+  if(!text) return false;
+  const t=text.toLowerCase();
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every(w=>t.includes(w));
+}
