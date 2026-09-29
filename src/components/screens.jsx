@@ -7,7 +7,7 @@ import { parsePrice, findBySku } from "../utils/dates.jsx";
 export function ProductsScreen({products,onBack,onSaveProduct,onDeleteProduct,onConfirmDelete,profile}){
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
-  const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||p.desc&&p.desc.toLowerCase().includes(search.toLowerCase())||p.fornecedor&&p.fornecedor.toLowerCase().includes(search.toLowerCase()));
+  const list=Object.values(products).filter(p=>!search||p.sku.includes(search)||tokenMatch(p.desc,search)||tokenMatch(p.fornecedor,search)||tokenMatch(p.familia,search));
   return React.createElement("div",{style:{background:C.bg,minHeight:"100vh"}},
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
       React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
@@ -94,7 +94,7 @@ export function SearchOverlay({data,onClose,onNavigate,onSaveProduct,onDeletePro
   const results=term.length>=2?(()=>{
     const matchedSkus=new Set();
     allBoxSkus.forEach(sku=>{if(sku.includes(term))matchedSkus.add(sku);});
-    Object.values(products).forEach(p=>{if(p.desc&&p.desc.toLowerCase().includes(term.toLowerCase())||p.familia&&p.familia.toLowerCase().includes(term.toLowerCase()))matchedSkus.add(p.sku);});
+    Object.values(products).forEach(p=>{if(tokenMatch(p.desc,term)||tokenMatch(p.familia,term))matchedSkus.add(p.sku);});
     return[...matchedSkus].map(sku=>({sku,product:products[sku],locations:findBySku(sku,data.corridors)})).filter(r=>r.locations.length>0);
   })():[];
   const suggestions=term.length>=2&&term.length<7?allBoxSkus.filter(s=>s.startsWith(term)&&s!==term).slice(0,5):[];
