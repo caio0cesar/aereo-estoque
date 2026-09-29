@@ -39,7 +39,7 @@ function SectorModal({sector,onSave,onClose}){
 }
 
 // --- BayScreen ---
-export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [modal,setModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
   const dragRef=useRef(null);
@@ -88,8 +88,9 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,on
           corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:18}):React.createElement("span",null,corridor.mascot||"")," Aéreo - Bay "+bay.number),
         React.createElement("div",{style:{fontSize:10,color:C.muted}},bay.side+" · "+bay.label+" · C"+corridor.number)
       ),
-      React.createElement(Tag,null,floors.length+" and."),
-      React.createElement(Tag,null,totalBoxes+" cx.")
+            React.createElement(Tag,null,floors.length+" and."),
+      React.createElement(Tag,null,totalBoxes+" cx."),
+      onHome&&React.createElement("button",{onClick:onHome,title:"Início",style:{background:"none",border:"none",color:C.muted,fontSize:18,padding:"0 0 0 4px"}},"🏠")
     ),
     React.createElement("div",{style:{padding:"12px 12px 80px"}},
       floors.map(floor=>React.createElement("div",{key:floor.id,style:{background:"rgba(0,0,0,0.25)",border:"1px solid "+C.border,borderRadius:12,padding:"10px 10px 4px",marginBottom:10}},
@@ -117,14 +118,14 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onUpdateBay,on
 }
 
 // --- CorridorScreen ---
-export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorridor,onSyncBoxes,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function CorridorScreen({corridor,products,corridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
   const [bayModal,setBayModal]=useState(null);
 
   if(selectedBay){
     const bay=corridor.bays.find(b=>b.id===selectedBay);
     if(!bay){setSelectedBay(null);return null;}
-    return React.createElement(BayScreen,{bay,corridor,products,corridors,onBack:()=>setSelectedBay(null),highlightBoxId,onConfirmDelete,onRegisterUndo,profile,
+    return React.createElement(BayScreen,{bay,corridor,products,corridors,onBack:()=>setSelectedBay(null),onHome,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,
       onUpdateBay:updated=>onSyncBoxes({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)}),
       onUpdateBayStructure:updated=>onUpdateCorridor({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)})});
   }
@@ -167,10 +168,11 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
     React.createElement("div",{style:{position:"fixed",bottom:20,right:20,opacity:0.04,pointerEvents:"none",zIndex:0}},
       corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:90}):React.createElement("div",{style:{fontSize:90,lineHeight:1}},corridor.mascot||"📦")),
     React.createElement("div",{style:{padding:"16px 16px 12px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:C.bg,zIndex:10,borderBottom:"1px solid "+C.border}},
-      React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
-      React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:17,display:"flex",alignItems:"center",gap:6}},
+            React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:C.muted,fontSize:22,padding:"0 4px 0 0"}},"←"),
+      React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:17,display:"flex",alignItems:"center",gap:6}},
         corridor.mascot==="🦆"?React.createElement(DuckIcon,{size:20}):React.createElement("span",null,corridor.mascot||""),
-        "Corredor "+corridor.number))
+        "Corredor "+corridor.number)),
+      onHome&&React.createElement("button",{onClick:onHome,title:"Início",style:{background:"none",border:"none",color:C.muted,fontSize:18,padding:"0 4px"}},"🏠")
     ),
     React.createElement("div",{style:{padding:14}},
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}},
@@ -187,7 +189,7 @@ export function CorridorScreen({corridor,products,corridors,onBack,onUpdateCorri
 }
 
 // --- SectorScreen ---
-export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUpdateCorridor,onSyncBoxes,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function SectorScreen({sector,corridors,products,allCorridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
   const [corridorModal,setCorridorModal]=useState(null);
 
@@ -214,7 +216,8 @@ export function SectorScreen({sector,corridors,products,allCorridors,onBack,onUp
           sector.mascot==="🦆"?React.createElement(DuckIcon,{size:22}):React.createElement("span",null,sector.mascot)," "+sector.name),
         React.createElement("div",{style:{fontSize:11,color:C.muted}},corridors.length+" corredor(es)")
       ),
-      isEndministrator(profile)&&React.createElement("button",{onClick:()=>setCorridorModal({corridor:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12}},"+ Corredor")
+           isEndministrator(profile)&&React.createElement("button",{onClick:()=>setCorridorModal({corridor:null}),style:{background:C.accent,border:"none",color:"#071e26",borderRadius:9,padding:"7px 12px",fontWeight:700,fontSize:12}},"+ Corredor"),
+      onHome&&React.createElement("button",{onClick:onHome,title:"Início",style:{background:"none",border:"none",color:C.muted,fontSize:18,padding:"0 0 0 4px"}},"🏠")
     ),
     React.createElement("div",{style:{padding:14}},
       corridors.length===0&&React.createElement("div",{style:{textAlign:"center",padding:"40px 0",color:C.muted}},
