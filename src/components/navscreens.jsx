@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
-import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon, isEndministrator, isProOperator, isOperator, getRoleLabel } from "./shared.jsx";
-import FloorRow from "./floorrow.jsx";
+import { C, Tag, Modal, Lbl, NumInput, SaveBtn, ConfirmModal, DuckIcon, isEndministrator, isProOperator, isOperator, getRoleLabel, tokenMatch } from "./shared.jsx";
 import { BoxDetailModal, BoxEditModal } from "./boxmodal.jsx";
 import { getAllExpiring } from "../utils/validity.jsx";
 import { genId, todayFull, renumberFloors, findBySku } from "../utils/dates.jsx";
@@ -265,7 +264,7 @@ export function HomeScreen({data,onSelectSector,onNavigate,onOpenProducts,onOpen
   const searchResults=term.length>=2?(()=>{
     const matchedSkus=new Set();
     allBoxSkus.forEach(sku=>{if(sku.includes(term))matchedSkus.add(sku);});
-    Object.values(products).forEach(p=>{if(p.desc&&p.desc.toLowerCase().includes(term.toLowerCase()))matchedSkus.add(p.sku);});
+    Object.values(products).forEach(p=>{if(tokenMatch(p.desc,term)||tokenMatch(p.familia,term))matchedSkus.add(p.sku);});
     return[...matchedSkus].map(sku=>({sku,product:products[sku],locations:findBySku(sku,data.corridors)})).filter(r=>r.locations.length>0);
   })():[];
 
