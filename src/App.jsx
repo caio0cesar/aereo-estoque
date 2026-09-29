@@ -69,10 +69,11 @@ useEffect(()=>{
   },[session]);
   useEffect(()=>{ if(data){ persist(data); dataRef.current=data; } },[data]);
 
-  const screen=screenStack[screenStack.length-1];
+    const screen=screenStack[screenStack.length-1];
   const nav=s=>setScreenStack(st=>[...st,s]);
   const back=()=>setScreenStack(st=>st.length>1?st.slice(0,-1):st);
-
+  const goHome=()=>setScreenStack([{type:"home"}]);
+  
   async function handleBackup(){
     try{
       const local=await loadPersisted();
@@ -183,14 +184,14 @@ if(session===undefined) return React.createElement("div",{style:{background:"#07
     screen.type==="sector"&&(()=>{
       const sector=(data.sectors||[]).find(s=>s.id===screen.sectorId);
       if(!sector) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Setor não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onUpdateCorridor:updateCorridorStructure,onSyncBoxes:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
+      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onHome:goHome,onUpdateCorridor:updateCorridorStructure,onSyncBoxes:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
     })(),
     screen.type==="bay"&&(()=>{
       const cor=data.corridors.find(c=>c.id===screen.corridorId);
       if(!cor) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
       const bay={...cor,mascot:getMascot(cor.sectorId)}.bays.find(b=>b.id===screen.bayId);
       if(!bay) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Bay não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,profile,
+      return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,onHome:goHome,profile,
         onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
         onUpdateBayStructure:updated=>updateCorridorStructure({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
         ...sharedProps});
