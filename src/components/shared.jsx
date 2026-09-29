@@ -65,10 +65,11 @@ export function DuckIcon({size=40}){
 }
 
 const STOPWORDS=new Set(["de","da","do","das","dos","e","a","o","as","os","em","para","com","sem","um","uma"]);
+function norm(s){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 export function tokenMatch(text, query){
   if(!text) return false;
-  const t=text.toLowerCase();
-  const words=query.toLowerCase().split(/\s+/).filter(w=>w&&!STOPWORDS.has(w));
+  const t=norm(text.toLowerCase());
+  const words=norm(query.toLowerCase()).split(/\s+/).filter(w=>w&&!STOPWORDS.has(w));
   if(words.length===0) return true;
   return words.every(w=>t.includes(w));
 }
