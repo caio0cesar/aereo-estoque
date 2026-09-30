@@ -58,8 +58,15 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
     }));
   }
 
-  function handleFixSlot(box,newSlot){
+    function handleFixSlot(box,newSlot){
     db.upsertBox({id:box.id,slot_index:newSlot}).catch(console.error);
+  }
+
+  function handlePoke(box,floorId){
+    updateBayFloors(bay.floors.map(f=>f.id===floorId?{...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:profile.id,pokeByName:(profile&&profile.name)||""}:b)}:f));
+  }
+  function handleReturnPoke(box){
+    updateBayFloors(bay.floors.map(f=>({...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:null,pokeByName:null}:b)})));
   }
 
   function handleSave(form){
@@ -102,11 +109,11 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
             isEndministrator(profile)&&React.createElement("button",{onClick:()=>{if(floor.boxes.length>0){alert("Remova as caixas antes.");return;}const fid=floor.id;updateBayFloors(bay.floors.filter(f=>f.id!==fid));onRegisterUndo("Andar excluído",()=>db.deleteFloor(fid));},style:{background:"none",border:"1px solid "+C.border,color:C.dim,borderRadius:7,padding:"2px 8px",fontSize:12}},"✕")
           )
         ),
-        React.createElement(FloorRow,{floor,mascot:corridor.mascot||"📦",products,onClickBox:box=>setDetailModal({box,floorId:floor.id,floorNumber:floor.number}),onUpdateFloor:handleFloorUpdate,dragRef,draggingId,setDraggingId,canMove:isOperator(profile),onFixSlot:handleFixSlot})
+        React.createElement(FloorRow,{floor,mascot:corridor.mascot||"📦",products,onClickBox:box=>setDetailModal({box,floorId:floor.id,floorNumber:floor.number}),onUpdateFloor:handleFloorUpdate,dragRef,draggingId,setDraggingId,canMove:isOperator(profile),onFixSlot:handleFixSlot,onPokeBox:handlePoke,onReturnPoke:handleReturnPoke,profile})
       )),
       isEndministrator(profile)&&React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBayStructure({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},"+ Adicionar Andar")
     ),
-    detailModal&&!modal&&React.createElement(BoxDetailModal,{
+    isOperator(profile)&&React.createElement("div",{       "data-poke-icon":"true",       onDragOver:e=>{if(dragRef.current)e.preventDefault();},       onDrop:e=>{e.preventDefault();if(dragRef.current){handlePoke(dragRef.current.box,dragRef.current.fromFloorId);dragRef.current=null;setDraggingId(null);}},       style:{position:"fixed",right:16,bottom:20,width:52,height:52,background:"rgba(255,209,102,0.15)",border:"2px dashed #ffd166",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,zIndex:60,transition:"transform 0.15s ease, background 0.15s ease"}     },"📥"),     detailModal&&!modal&&React.createElement(BoxDetailModal,{
       box:detailModal.box,product:products[detailModal.box.sku],
       floorNumber:detailModal.floorNumber,bay,corridor,
       allLocations:findBySku(detailModal.box.sku,corridors),
