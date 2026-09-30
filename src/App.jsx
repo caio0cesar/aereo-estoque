@@ -129,7 +129,7 @@ useEffect(()=>{
     return Promise.all((cor.bays||[]).map(bay =>
       Promise.all((bay.floors||[]).map(floor =>
         Promise.all((floor.boxes||[]).map(box =>
-          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null})
+          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null,poke_by:box.pokeById||null,poke_by_name:box.pokeByName||null})
         ))
       ))
     ));
@@ -142,7 +142,7 @@ useEffect(()=>{
       return Promise.all((bay.floors||[]).map(async floor=>{
         await db.upsertFloor({id:floor.id,bay_id:bay.id,number:floor.number});
         return Promise.all((floor.boxes||[]).map(box=>
-          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null})
+          db.upsertBox({id:box.id,floor_id:floor.id,sku:box.sku,qty:box.qty,updated_by:box.updatedBy||null,date:toISO(box.date)||null,validade:toISO(box.validade)||null,stack_id:box.stackId||null,stack_order:box.stackOrder||0,slot_index:box.slotIndex!=null?box.slotIndex:null,poke_by:box.pokeById||null,poke_by_name:box.pokeByName||null})
         ));
       }));
     }));
