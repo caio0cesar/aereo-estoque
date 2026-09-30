@@ -17,7 +17,7 @@ function scrollParent(el){
   return null;
 }
 
-export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot}){
+export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot,onPokeBox,profile,onReturnPoke}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8, CARD_H=90, PEEK=32;
 
   function buildSlots(boxes){
