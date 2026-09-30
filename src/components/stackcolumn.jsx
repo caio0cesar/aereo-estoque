@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { getValidity } from "../utils/validity.jsx";
-import { DuckIcon } from "./shared.jsx";
+import { DuckIcon, isProOperator } from "./shared.jsx";
 
 // Em celular (toque) o arraste é feito pelo FloorRow com Pointer Events.
 // O drag nativo do HTML5 fica só para mouse, senão o Chrome Android pode iniciar
