@@ -68,11 +68,19 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   function lockAll(on){FLOORS.forEach(r=>r.lock(on));}
   function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&!!a.poke===!!b.poke&&a.floorId===b.floorId&&a.slot===b.slot&&a.gv===b.gv);}
   // Mostra/limpa o espaço de inserção no andar certo
-  function applyPreview(t){
+    function applyPreview(t){
     const old=previewRef.current;
-    if(old&&(!t||old.floorId!==t.floorId)){const r=FLOORS.get(old.floorId);if(r)r.setPreview(null);}
-    if(t){const r=FLOORS.get(t.floorId);if(r)r.setPreview({slot:t.slot,gv:t.gv});}
+    if(old&&!old.poke&&(!t||old.floorId!==t.floorId)){const r=FLOORS.get(old.floorId);if(r)r.setPreview(null);}
+    if(t&&!t.poke){const r=FLOORS.get(t.floorId);if(r)r.setPreview({slot:t.slot,gv:t.gv});}
+    if(!!(t&&t.poke)!==!!(old&&old.poke))setPokeHover(!!(t&&t.poke));
     previewRef.current=t;
+  }
+  function setPokeHover(on){
+    const el=document.querySelector("[data-poke-icon]");
+    if(!el)return;
+    el.style.transform=on?"scale(1.35)":"scale(1)";
+    el.style.background=on?"rgba(255,209,102,0.4)":"rgba(255,209,102,0.15)";
+  }
   }
   function placeGhost(x,y){ghostPos.current={x,y};const g=ghostRef.current;if(g){g.style.left=x+"px";g.style.top=y+"px";}}
   function stopAuto(){if(autoRef.current){clearInterval(autoRef.current);autoRef.current=null;}}
