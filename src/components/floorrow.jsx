@@ -231,10 +231,15 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       lastGesture.current=Date.now();
       stopAuto();lockAll(false);
       setGhostBox(null);setDraggingId(null);
-      const p=previewRef.current;
+            const p=previewRef.current;
       applyPreview(null);
-      const reg=p?FLOORS.get(p.floorId):null;
-      if(e.type==="pointerup"&&p&&reg)reg.drop(p.slot,p.gv);   // solta no andar de destino (pode ser outro andar)
+      if(e.type==="pointerup"&&p&&p.poke&&onPokeBox){
+        onPokeBox(dr.box,dr.fromFloorId);
+        dragRef.current=null;
+        return;
+      }
+      const reg=p&&!p.poke?FLOORS.get(p.floorId):null;
+      if(e.type==="pointerup"&&p&&!p.poke&&reg)reg.drop(p.slot,p.gv);   // solta no andar de destino (pode ser outro andar)
       else dragRef.current=null;
       return;
     }
