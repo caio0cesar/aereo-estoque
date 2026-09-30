@@ -94,8 +94,10 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   // Descobre em qual andar/slot o dedo está e em qual posição da pilha inserir.
   // gv = posição visual (0 = topo/atrás, n = embaixo/na frente), calculada sem contar o espaço de preview
   // para o resultado não "tremer" quando o espaço se abre.
-  function targetAt(x,y){
+    function targetAt(x,y){
     const el=document.elementFromPoint(x,y);
+    const pokeEl=el&&el.closest?el.closest("[data-poke-icon]"):null;
+    if(pokeEl)return{poke:true};
     const slotEl=el&&el.closest?el.closest("[data-slotidx]"):null;
     if(!slotEl)return null;
     const host=slotEl.closest("[data-floorid]");
