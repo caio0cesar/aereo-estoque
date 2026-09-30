@@ -129,7 +129,8 @@ export async function loadFromSupabase() {
     boxes:(boxes||[]).filter(b=>b.floor_id===f.id).map(b=>({
       id:b.id, sku:b.sku, qty:b.qty,
       updatedBy:b.updated_by||"", date:fromISO(b.date)||"",
-      validade:fromISO(b.validade)||"", stackId:b.stack_id||null, stackOrder:b.stack_order||0, slotIndex:b.slot_index!=null?b.slot_index:null,
+            validade:fromISO(b.validade)||"", stackId:b.stack_id||null, stackOrder:b.stack_order||0, slotIndex:b.slot_index!=null?b.slot_index:null,
+      pokeById:b.poke_by||null, pokeByName:b.poke_by_name||null,
     })),
   }));
   const baysWithFloors = (bays||[]).map(b => ({
