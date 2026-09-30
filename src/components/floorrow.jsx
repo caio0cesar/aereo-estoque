@@ -66,7 +66,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   // ---------- helpers ----------
   function lockScroll(on){if(scrollRef.current)scrollRef.current.style.touchAction=on?"none":"pan-x";}
   function lockAll(on){FLOORS.forEach(r=>r.lock(on));}
-  function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&a.floorId===b.floorId&&a.slot===b.slot&&a.gv===b.gv);}
+  function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&!!a.poke===!!b.poke&&a.floorId===b.floorId&&a.slot===b.slot&&a.gv===b.gv);}
   // Mostra/limpa o espaço de inserção no andar certo
   function applyPreview(t){
     const old=previewRef.current;
