@@ -9,7 +9,7 @@ const FINE_POINTER = typeof window!=="undefined"&&window.matchMedia
   ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
   : true;
 
-export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef,previewGv}){
+export default function StackColumn({group,mascot,products,onClickBox,dragRef,draggingId,setDraggingId,floorId,onDropOnStack,canMove,scrollRef,previewGv,profile,onReturnPoke}){
   const [hovered,setHovered]=useState(-1);
 
   const CARD_H=90, PEEK=32;
@@ -43,17 +43,19 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
 
       const vi=getValidity(box.validade);
       const isFront=r===N-1, isHov=hovered===r;
+      const poked=!!box.pokeById;
+      const canReturn=poked&&profile&&(isProOperator(profile)||profile.id===box.pokeById);
       return React.createElement("div",{
-        key:box.id, "data-boxid":box.id, draggable:!!canMove&&FINE_POINTER,
+        key:box.id, "data-boxid":poked?undefined:box.id, draggable:!!canMove&&FINE_POINTER&&!poked,
         onDragStart:e=>{if(!canMove)return;dragRef.current={box,fromFloorId:floorId};setDraggingId(box.id);e.dataTransfer.effectAllowed="move";},
         onDragEnd:()=>{dragRef.current=null;setDraggingId(null);},
         onDragOver:e=>{if(!canMove)return;e.preventDefault();e.dataTransfer.dropEffect="move";},
         onMouseEnter:()=>setHovered(r), onMouseLeave:()=>setHovered(-1),
-        onClick:e=>{e.stopPropagation();onClickBox(box);},
+        onClick:e=>{e.stopPropagation();if(canReturn){onReturnPoke&&onReturnPoke(box);return;}onClickBox(box);},
         style:{
           position:"absolute", top:topOffset, left:0, width:"100%", height:CARD_H,
-          background:isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,78,0.98)":"rgba(8,42,58,0.96)",
-          border:"1px solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)"),
+          background:poked?"rgba(255,209,102,0.12)":(isHov?"rgba(25,80,100,0.99)":isFront?"rgba(12,58,78,0.98)":"rgba(8,42,58,0.96)"),
+          border:"1px "+(poked?"dashed #ffd166":"solid "+(vi&&vi.days<=90?vi.color+"cc":isFront?"rgba(29,209,161,0.5)":"rgba(29,209,161,0.28)")),
           borderRadius:10, padding:"8px 9px", cursor:canMove?"grab":"pointer", overflow:"hidden",
           transform:"translateY("+(isHov?-10:0)+"px)",
           transition:"transform 0.18s ease, top 0.18s ease, box-shadow 0.18s, opacity 0.15s",
@@ -64,8 +66,11 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           touchAction:canMove?"none":undefined,
         }
       },
-        React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
+           React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
           mascot==="🦆"?React.createElement(DuckIcon,{size:34}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
+        ),
+        poked&&React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:"rgba(7,30,38,0.35)",zIndex:2}},
+          React.createElement("div",{style:{fontSize:9,fontWeight:800,color:"#ffd166",textAlign:"center",padding:"2px 8px",background:"rgba(7,30,38,0.7)",borderRadius:6,lineHeight:1.3}},(box.pokeByName||"?")+"'s poke")
         ),
         isFront?(
           React.createElement(React.Fragment,null,
