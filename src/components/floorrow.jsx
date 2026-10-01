@@ -64,7 +64,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   slotsRef.current=slots;
 
   // ---------- helpers ----------
-  function lockScroll(on){if(scrollRef.current)scrollRef.current.style.touchAction=on?"none":"pan-x";}
+  function lockScroll(on){if(scrollRef.current)scrollRef.current.style.touchAction=on?"none":"pan-x pan-y";}
   function lockAll(on){FLOORS.forEach(r=>r.lock(on));}
   function samePrev(a,b){return(!a&&!b)||(!!a&&!!b&&!!a.poke===!!b.poke&&a.floorId===b.floorId&&a.slot===b.slot&&a.gv===b.gv);}
   // Mostra/limpa o espaço de inserção no andar certo
@@ -130,11 +130,13 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     if(!samePrev(t,previewRef.current))applyPreview(t);
   }
 
-  function autoTick(){
+    function autoTick(){
     const dr=dragRef.current;
     if(!dr||!dr.touch)return;
     const r=ptrs.current.get(dr.pointerId);
     if(!r)return;
+    const under=document.elementFromPoint(r.cx,r.cy);
+    if(under&&under.closest&&under.closest("[data-poke-icon]"))return;   // sobre o poke: não rola nada
     let moved=false;
     // vertical: rola a tela para alcançar outros andares
     const sp=vScrollRef.current;
@@ -291,7 +293,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   const scroller=React.createElement("div",{
     ref:scrollRef,"data-floorid":fid,
     onPointerDown,onPointerMove,onPointerUp:onPointerEnd,onPointerCancel:onPointerEnd,
-    style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x",overscrollBehaviorX:"contain"}
+    style:{display:"flex",overflowX:"auto",gap:GAP,padding:"8px 4px 14px",minHeight:SLOT_H+22,WebkitOverflowScrolling:"touch",touchAction:"pan-x pan-y",overscrollBehaviorX:"contain"}
   },
     slots.map((group,slotIdx)=>{
       const previewGv=preview&&preview.slot===slotIdx?preview.gv:null;
