@@ -63,7 +63,7 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
           opacity:draggingId===box.id?0.35:1,
           boxShadow:isHov?"0 8px 20px rgba(0,0,0,0.8)":isFront?"0 4px 14px rgba(0,0,0,0.6)":"0 2px 6px rgba(0,0,0,0.5)",
           userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none",
-          touchAction:canMove?"none":undefined,
+          touchAction:canMove?"pan-x pan-y":undefined,
         }
       },
            React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
