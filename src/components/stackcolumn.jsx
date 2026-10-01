@@ -69,8 +69,8 @@ export default function StackColumn({group,mascot,products,onClickBox,dragRef,dr
            React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",opacity:0.05}},
           mascot==="🦆"?React.createElement(DuckIcon,{size:34}):React.createElement("div",{style:{fontSize:34,lineHeight:1}},mascot)
         ),
-        poked&&React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:"rgba(7,30,38,0.35)",zIndex:2}},
-          React.createElement("div",{style:{fontSize:9,fontWeight:800,color:"#ffd166",textAlign:"center",padding:"2px 8px",background:"rgba(7,30,38,0.7)",borderRadius:6,lineHeight:1.3}},(box.pokeByName||"?")+"'s poke")
+         poked&&React.createElement("div",{style:{position:"absolute",left:4,right:4,top:30,bottom:4,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:"rgba(7,30,38,0.6)",borderRadius:6,zIndex:2}},
+          React.createElement("div",{style:{fontSize:9,fontWeight:800,color:"#ffd166",textAlign:"center",lineHeight:1.3}},(box.pokeByName||"?")+"'s poke")
         ),
         isFront?(
           React.createElement(React.Fragment,null,
