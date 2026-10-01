@@ -186,7 +186,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     const dr=dragRef.current, dragging=!!(dr&&dr.touch);
     const boxEl=e.target.closest?e.target.closest("[data-boxid]"):null;
     const onBox=!!(boxEl&&canMove);
-    const rec={id:e.pointerId,x:e.clientX,y:e.clientY,lx:e.clientX,cx:e.clientX,cy:e.clientY,
+    const rec={id:e.pointerId,x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,cx:e.clientX,cy:e.clientY,
       boxId:boxEl?boxEl.getAttribute("data-boxid"):null,manual:onBox||dragging,pan:false,t:null,v:0,lt:e.timeStamp};
     if(!dragging)ptrs.current.forEach(o=>{if(o.t){clearTimeout(o.t);o.t=null;}});
     ptrs.current.set(e.pointerId,rec);
@@ -200,8 +200,8 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   function onPointerMove(e){
     const r=ptrs.current.get(e.pointerId);
     if(!r)return;
-    const dx=e.clientX-r.lx;
-    r.lx=e.clientX;r.cx=e.clientX;r.cy=e.clientY;
+    const dx=e.clientX-r.lx, dy=e.clientY-r.ly;
+    r.lx=e.clientX;r.ly=e.clientY;r.cx=e.clientX;r.cy=e.clientY;
     const dr=dragRef.current, dragging=!!(dr&&dr.touch);
     if(dragging&&dr.pointerId===e.pointerId){       // dedo que segura a caixa
       placeGhost(e.clientX,e.clientY);
@@ -213,11 +213,14 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       if(r.t){clearTimeout(r.t);r.t=null;}
     }
     if(!r.manual)return;
-    if(r.pan||dragging){                             // outro dedo: rola o andar em que ele encostou, na mão
+    if(r.pan||dragging){                             
       r.pan=true;
       if(scrollRef.current)scrollRef.current.scrollLeft-=dx;
+      if(!r.vsp)r.vsp=scrollParent(scrollRef.current);
+      if(r.vsp)r.vsp.scrollTop-=dy; else window.scrollBy(0,-dy);
       const dt=Math.max(1,e.timeStamp-r.lt);
       r.v=0.7*r.v+0.3*(-dx/dt);
+    }
     }
     r.lt=e.timeStamp;
   }
