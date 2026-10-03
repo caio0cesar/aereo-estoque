@@ -43,7 +43,9 @@ function SectorModal({sector,onSave,onClose}){
 export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
   const [modal,setModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
-  const dragRef=useRef(null);
+  const [showPoke,setShowPoke]=useState(false);
+  const [confirmReturn,setConfirmReturn]=useState(null);
+  const dragRef=useRef(null);;
   const [draggingId,setDraggingId]=useState(null);
   const floors=[...bay.floors].sort((a,b)=>b.number-a.number);
   const totalBoxes=bay.floors.reduce((s,f)=>s+f.boxes.length,0);
@@ -66,8 +68,19 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
     updateBayFloors(bay.floors.map(f=>f.id===floorId?{...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:profile.id,pokeByName:(profile&&profile.name)||""}:b)}:f));
   }
   function handleReturnPoke(box){
-    updateBayFloors(bay.floors.map(f=>({...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:null,pokeByName:null}:b)})));
+    setConfirmReturn(box);
   }
+  function doReturnPoke(){
+    const box=confirmReturn; if(!box) return;
+    updateBayFloors(bay.floors.map(f=>({...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:null,pokeByName:null}:b)})));
+    setConfirmReturn(null);
+  }
+  function findMyPoke(){
+    const list=[];
+    bay.floors.forEach(fl=>fl.boxes.forEach(box=>{if(box.pokeById===profile.id)list.push({box,fl});}));
+    return list;
+  }
+  const pokedList=isOperator(profile)?findMyPoke():[];
 
   function handleSave(form){
     const box=modal.type==="edit"?{...modal.box,...form,updatedBy:(profile&&profile.name)||modal.box.updatedBy||""}:{...form,id:genId(),updatedBy:(profile&&profile.name)||""};
@@ -113,7 +126,37 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
       )),
       isEndministrator(profile)&&React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBayStructure({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},"+ Adicionar Andar")
     ),
-    isOperator(profile)&&React.createElement("div",{       "data-poke-icon":"true",       onDragOver:e=>{if(dragRef.current)e.preventDefault();},       onDrop:e=>{e.preventDefault();if(dragRef.current){handlePoke(dragRef.current.box,dragRef.current.fromFloorId);dragRef.current=null;setDraggingId(null);}},       style:{position:"fixed",right:16,bottom:20,width:52,height:52,background:"rgba(255,209,102,0.15)",border:"2px dashed #ffd166",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,zIndex:60,transition:"transform 0.15s ease, background 0.15s ease"}     },"📥"),     detailModal&&!modal&&React.createElement(BoxDetailModal,{
+    isOperator(profile)&&React.createElement("div",{
+      "data-poke-icon":"true",
+      onClick:()=>setShowPoke(true),
+      onDragOver:e=>{if(dragRef.current)e.preventDefault();},
+      onDrop:e=>{e.preventDefault();if(dragRef.current){handlePoke(dragRef.current.box,dragRef.current.fromFloorId);dragRef.current=null;setDraggingId(null);}},
+      style:{position:"fixed",right:16,bottom:20,width:52,height:52,background:"rgba(255,209,102,0.15)",border:"2px dashed #ffd166",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,zIndex:60,cursor:"pointer",transition:"transform 0.15s ease, background 0.15s ease"}
+    },
+      "📥",
+      pokedList.length>0&&React.createElement("div",{style:{position:"absolute",top:-6,right:-6,background:"#ff6b6b",color:"#fff",borderRadius:"50%",minWidth:18,height:18,fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}},pokedList.length)
+    ),
+    showPoke&&React.createElement(Modal,{onClose:()=>setShowPoke(false),title:"📥 Seu poke neste Bay"},
+      pokedList.length===0&&React.createElement("div",{style:{textAlign:"center",padding:"20px 0",color:C.muted,fontSize:13}},"Nenhuma caixa sua guardada aqui."),
+      pokedList.map((item,i)=>React.createElement("div",{key:i,style:{background:"rgba(255,209,102,0.08)",border:"1px solid rgba(255,209,102,0.3)",borderRadius:10,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontWeight:700,fontSize:13,color:C.text}},item.box.sku),
+          React.createElement("div",{style:{fontSize:11,color:C.muted}},"Andar "+item.fl.number+" · Qtd: "+item.box.qty)
+        ),
+        React.createElement("button",{onClick:()=>{setShowPoke(false);handleReturnPoke(item.box);},style:{background:"rgba(29,209,161,0.12)",border:"1px solid rgba(29,209,161,0.3)",color:C.accent,borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700,flexShrink:0}},"🔙 Devolver")
+      ))
+    ),
+    confirmReturn&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.87)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:20}},
+      React.createElement("div",{className:"su",style:{background:C.modalBg,border:"1px solid "+C.border,borderRadius:16,padding:24,width:"100%",maxWidth:320,textAlign:"center"}},
+        React.createElement("div",{style:{fontSize:32,marginBottom:10}},"📤"),
+        React.createElement("div",{style:{fontSize:15,fontWeight:600,marginBottom:16,color:C.text}},"Devolver a caixa "+confirmReturn.sku+" para o lugar original?"),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          React.createElement("button",{onClick:()=>setConfirmReturn(null),style:{background:"rgba(255,255,255,0.08)",border:"1px solid "+C.border,color:C.muted,borderRadius:10,padding:11,fontWeight:600,fontSize:14}},"Manter no poke"),
+          React.createElement("button",{onClick:doReturnPoke,style:{background:"rgba(29,209,161,0.15)",border:"1px solid rgba(29,209,161,0.3)",color:C.accent,borderRadius:10,padding:11,fontWeight:700,fontSize:14}},"Devolver")
+        )
+      )
+    ),
+    detailModal&&!modal&&React.createElement(BoxDetailModal,{
       box:detailModal.box,product:products[detailModal.box.sku],
       floorNumber:detailModal.floorNumber,bay,corridor,
       allLocations:findBySku(detailModal.box.sku,corridors),
