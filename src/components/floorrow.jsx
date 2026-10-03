@@ -221,7 +221,6 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       const dt=Math.max(1,e.timeStamp-r.lt);
       r.v=0.7*r.v+0.3*(-dx/dt);
     }
-    }
     r.lt=e.timeStamp;
   }
 
