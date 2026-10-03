@@ -78,7 +78,7 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
   function setPokeHover(on){
     const el=document.querySelector("[data-poke-icon]");
     if(!el)return;
-    el.style.transform=on?"scale(1.35)":"scale(1)";
+    el.style.transform=on?"scale(2.2)":"scale(1)";
     el.style.background=on?"rgba(255,209,102,0.4)":"rgba(255,209,102,0.15)";
   }
   function placeGhost(x,y){ghostPos.current={x,y};const g=ghostRef.current;if(g){g.style.left=x+"px";g.style.top=y+"px";}}
