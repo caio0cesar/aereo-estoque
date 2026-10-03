@@ -216,8 +216,8 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     if(r.pan||dragging){                             
       r.pan=true;
       if(scrollRef.current)scrollRef.current.scrollLeft-=dx;
-      if(!r.vsp)r.vsp=scrollParent(scrollRef.current);
-      if(r.vsp)r.vsp.scrollTop-=dy; else window.scrollBy(0,-dy);
+      if(!r.vsp)r.vsp=scrollParent(scrollRef.current)||document.scrollingElement||document.documentElement;
+      r.vsp.scrollTop-=dy;
       const dt=Math.max(1,e.timeStamp-r.lt);
       r.v=0.7*r.v+0.3*(-dx/dt);
     }
