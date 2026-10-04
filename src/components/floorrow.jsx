@@ -179,24 +179,6 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     autoRef.current=setInterval(autoTick,16);
   }
 
-    function startDrag(rec){
-    rec.t=null;
-    if(dragRef.current||!ptrs.current.has(rec.id))return;
-    const box=floor.boxes.find(b=>String(b.id)===String(rec.boxId));
-    if(!box)return;
-    dragRef.current={box,fromFloorId:floor.id,pointerId:rec.id,touch:true};
-    setDraggingId(box.id);
-    lockAll(true);
-    try{scrollRef.current.setPointerCapture(rec.id);}catch(_){}
-    if(navigator.vibrate)navigator.vibrate(15);
-    vScrollRef.current=scrollParent(scrollRef.current);
-    placeGhost(rec.cx,rec.cy);
-    setGhostBox(box);
-    updateTarget(rec.cx,rec.cy);
-    stopAuto();
-    autoRef.current=setInterval(autoTick,16);
-  }
-
   function startHeldDrag(rec){
     if(dragRef.current||!heldPoke)return;
     dragRef.current={box:heldPoke.box,fromFloorId:heldPoke.fromFloorId,pointerId:rec.id,touch:true,heldFromPoke:true};
