@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { , useEffect, useRef } from "react";
 import { css, ConfirmModal, UndoToast } from "./components/shared.jsx";
 import LoginScreen from "./components/loginscreen.jsx";
 import ResetPasswordScreen from "./components/resetpasswordscreen.jsx";
@@ -32,11 +32,12 @@ export default function App(){
   const [undoState,setUndoState]=useState(null);
   const undoTimerRef=useRef(null);
   const dataRef=useRef(null);
-  const [session,setSession]=useState(undefined); // undefined = verificando sessão
-  const [profile,setProfile]=useState(null);
-const [passwordRecovery,setPasswordRecovery]=useState(false);
-  const [loadingData,setLoadingData]=useState(false);
-
+  const [session,setSession]=(undefined); // undefined = verificando sessão
+  const [profile,setProfile]=(null);
+  const [passwordRecovery,setPasswordRecovery]=(false);
+  const [loadingData,setLoadingData]=(false);
+  const [heldPoke,setHeldPoke]=(null);
+  
   async function initData(){
     setLoadingData(true);
     try{ setData(await loadFromSupabase()); }
@@ -98,7 +99,66 @@ useEffect(()=>{
   }
   function doUndo(){ if(undoState){ setData(undoState.snapshot); setUndoState(null); clearTimeout(undoTimerRef.current); } }
   function confirmDelete(msg,onConfirm){ setConfirmState({msg,onConfirm}); }
+  
+  function pickFromPoke(box,floorId,corridorId){ setHeldPoke({box,fromFloorId:floorId,fromCorridorId:corridorId}); }
+function cancelHeldPoke(){ setHeldPoke(null); }
 
+function clearPokeOnBox(boxId){
+  if(!dataRef.current) return;
+  let changedCorridor=null;
+  const corridors=dataRef.current.corridors.map(c=>{
+    let touched=false;
+    const bays=c.bays.map(bay=>({...bay,floors:bay.floors.map(fl=>{
+      if(!fl.boxes.some(b=>b.id===boxId)) return fl;
+      touched=true;
+      return {...fl,boxes:fl.boxes.map(b=>b.id===boxId?{...b,pokeById:null,pokeByName:null}:b)};
+    })}));
+    if(touched) changedCorridor=c.id;
+    return touched?{...c,bays}:c;
+  });
+  setData(d=>({...d,corridors}));
+  if(changedCorridor){
+    const cor=corridors.find(c=>c.id===changedCorridor);
+    if(cor) syncBoxesOnly(cor).catch(console.error);
+  }
+}
+
+function placeHeldPokeCrossBay(targetCorridorId,targetFloorId,slotIdx,gv){
+  if(!heldPoke||!dataRef.current) return;
+  const {box:draggedBox,fromFloorId,fromCorridorId}=heldPoke;
+  const corridors=dataRef.current.corridors.map(c=>{
+    let bays=c.bays;
+    if(c.id===fromCorridorId){
+      bays=bays.map(bay=>({...bay,floors:bay.floors.map(fl=>fl.id===fromFloorId?{...fl,boxes:fl.boxes.filter(b=>b.id!==draggedBox.id)}:fl)}));
+    }
+    if(c.id===targetCorridorId){
+      bays=bays.map(bay=>({...bay,floors:bay.floors.map(fl=>{
+        if(fl.id!==targetFloorId) return fl;
+        const stacks={}, order=[];
+        fl.boxes.forEach(b=>{const key=b.stackId||b.id;if(!stacks[key]){stacks[key]=[];order.push(key);}stacks[key].push(b);});
+        const groups=order.map(k=>stacks[k].sort((a,b)=>(a.stackOrder||0)-(b.stackOrder||0)));
+        const group=groups.find(g=>(g[0].slotIndex!=null?g[0].slotIndex:-1)===slotIdx)||[];
+        if(group.length>=10){alert("Máximo de 10 caixas por pilha!");return fl;}
+        const n=group.length;
+        const k2=gv==null?n:Math.max(0,Math.min(n,n-gv));
+        const stackId=n>0?(group[group.length-1].stackId||(draggedBox.id+"_stk")):null;
+        const orderOf={};
+        group.forEach((b,idx)=>{orderOf[b.id]=idx<k2?idx:idx+1;});
+        const newBox={...draggedBox,pokeById:null,pokeByName:null,stackId,stackOrder:n>0?k2:0,slotIndex:slotIdx};
+        const newBoxes=fl.boxes.map(b=>orderOf[b.id]!=null?{...b,stackId,stackOrder:orderOf[b.id],slotIndex:slotIdx}:b).concat([newBox]);
+        return {...fl,boxes:newBoxes};
+      })}));
+    }
+    return bays===c.bays?c:{...c,bays};
+  });
+  setData(d=>({...d,corridors}));
+  const fromCor=corridors.find(c=>c.id===fromCorridorId);
+  const toCor=corridors.find(c=>c.id===targetCorridorId);
+  if(fromCor) syncBoxesOnly(fromCor).catch(console.error);
+  if(toCor&&toCor.id!==fromCorridorId) syncBoxesOnly(toCor).catch(console.error);
+  setHeldPoke(null);
+}
+  
   function updateCorridor(updated){
     setData(d=>({...d,corridors:d.corridors.map(c=>c.id===updated.id?updated:c)}));
     syncBoxesOnly(updated).catch(console.error);
@@ -184,7 +244,7 @@ if(session===undefined) return React.createElement("div",{style:{background:"#07
     screen.type==="sector"&&(()=>{
       const sector=(data.sectors||[]).find(s=>s.id===screen.sectorId);
       if(!sector) return React.createElement("div",{style:{padding:20,color:"#ff6b6b"}},"Setor não encontrado. ",React.createElement("button",{onClick:back,style:{color:"#1dd1a1",background:"none",border:"none"}},"Voltar"));
-      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onHome:goHome,onUpdateCorridor:updateCorridorStructure,onSyncBoxes:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,...sharedProps});
+      return React.createElement(SectorScreen,{sector,corridors:data.corridors.filter(c=>c.sectorId===sector.id).map(c=>({...c,mascot:sector.mascot})),products:data.products,allCorridors:getAllCors(),onBack:back,onHome:goHome,onUpdateCorridor:updateCorridorStructure,onSyncBoxes:updateCorridor,onAddCorridor:addCorridor,onDeleteCorridor:deleteCorridor,profile,heldPoke,onPickPoke:pickFromPoke,onCancelHeldPoke:cancelHeldPoke,onPlaceHeldPoke:placeHeldPokeCrossBay,onClearPoke:clearPokeOnBox,...sharedProps});
     })(),
     screen.type==="bay"&&(()=>{
       const cor=data.corridors.find(c=>c.id===screen.corridorId);
@@ -194,6 +254,7 @@ if(session===undefined) return React.createElement("div",{style:{background:"#07
       return React.createElement(BayScreen,{bay,corridor:{...cor,mascot:getMascot(cor.sectorId)},products:data.products,corridors:getAllCors(),highlightBoxId:screen.highlightBoxId,onBack:back,onHome:goHome,profile,
         onUpdateBay:updated=>updateCorridor({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
         onUpdateBayStructure:updated=>updateCorridorStructure({...cor,bays:cor.bays.map(b=>b.id===updated.id?updated:b)}),
+        heldPoke,onPickPoke:pickFromPoke,onCancelHeldPoke:cancelHeldPoke,onPlaceHeldPoke:placeHeldPokeCrossBay,onClearPoke:clearPokeOnBox,
         ...sharedProps});
     })(),
     screen.type==="operators"&&React.createElement(OperatorsScreen,{onBack:back,sectors:data.sectors}),
