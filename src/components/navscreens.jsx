@@ -82,19 +82,6 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
     return list;
   }
   const pokedList=isOperator(profile)?findMyPoke():[];
-  }
-  function doReturnPoke(){
-    const box=confirmReturn; if(!box) return;
-    updateBayFloors(bay.floors.map(f=>({...f,boxes:f.boxes.map(b=>b.id===box.id?{...b,pokeById:null,pokeByName:null}:b)})));
-    setConfirmReturn(null);
-  }
-  function findMyPoke(){
-    const list=[];
-    bay.floors.forEach(fl=>fl.boxes.forEach(box=>{if(box.pokeById===profile.id)list.push({box,fl});}));
-    return list;
-  }
-  const pokedList=isOperator(profile)?findMyPoke():[];
-
   function handleSave(form){
     const box=modal.type==="edit"?{...modal.box,...form,updatedBy:(profile&&profile.name)||modal.box.updatedBy||""}:{...form,id:genId(),updatedBy:(profile&&profile.name)||""};
     updateBayFloors(bay.floors.map(f=>{
