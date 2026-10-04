@@ -17,7 +17,7 @@ function scrollParent(el){
   return null;
 }
 
-export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot,onPokeBox,profile,onReturnPoke}){
+export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor,dragRef,draggingId,setDraggingId,canMove,onFixSlot,onPokeBox,profile,onReturnPoke,heldPoke,onPlaceHeldPoke}){
   const MAX_SLOTS=10, SLOT_W=124, SLOT_H=100, GAP=8, CARD_H=90, PEEK=32;
 
   function buildSlots(boxes){
@@ -179,6 +179,39 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
     autoRef.current=setInterval(autoTick,16);
   }
 
+    function startDrag(rec){
+    rec.t=null;
+    if(dragRef.current||!ptrs.current.has(rec.id))return;
+    const box=floor.boxes.find(b=>String(b.id)===String(rec.boxId));
+    if(!box)return;
+    dragRef.current={box,fromFloorId:floor.id,pointerId:rec.id,touch:true};
+    setDraggingId(box.id);
+    lockAll(true);
+    try{scrollRef.current.setPointerCapture(rec.id);}catch(_){}
+    if(navigator.vibrate)navigator.vibrate(15);
+    vScrollRef.current=scrollParent(scrollRef.current);
+    placeGhost(rec.cx,rec.cy);
+    setGhostBox(box);
+    updateTarget(rec.cx,rec.cy);
+    stopAuto();
+    autoRef.current=setInterval(autoTick,16);
+  }
+
+  function startHeldDrag(rec){
+    if(dragRef.current||!heldPoke)return;
+    dragRef.current={box:heldPoke.box,fromFloorId:heldPoke.fromFloorId,pointerId:rec.id,touch:true,heldFromPoke:true};
+    setDraggingId(heldPoke.box.id);
+    lockAll(true);
+    try{scrollRef.current.setPointerCapture(rec.id);}catch(_){}
+    if(navigator.vibrate)navigator.vibrate(15);
+    vScrollRef.current=scrollParent(scrollRef.current);
+    placeGhost(rec.cx,rec.cy);
+    setGhostBox(heldPoke.box);
+    updateTarget(rec.cx,rec.cy);
+    stopAuto();
+    autoRef.current=setInterval(autoTick,16);
+  }
+  
   // ---------- eventos de ponteiro (toque/caneta). Mouse continua no drag nativo do HTML5 ----------
   function onPointerDown(e){
     if(e.pointerType==="mouse")return;
@@ -190,7 +223,9 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       boxId:boxEl?boxEl.getAttribute("data-boxid"):null,manual:onBox||dragging,pan:false,t:null,v:0,lt:e.timeStamp};
     if(!dragging)ptrs.current.forEach(o=>{if(o.t){clearTimeout(o.t);o.t=null;}});
     ptrs.current.set(e.pointerId,rec);
-    if(dragging){
+    if(heldPoke&&!dragging){
+      startHeldDrag(rec);
+    }else if(dragging){
       try{scrollRef.current.setPointerCapture(e.pointerId);}catch(_){}
     }else if(onBox&&ptrs.current.size===1){
       rec.t=setTimeout(()=>startDrag(rec),220);
@@ -234,8 +269,13 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
       lastGesture.current=Date.now();
       stopAuto();lockAll(false);
       setGhostBox(null);setDraggingId(null);
-            const p=previewRef.current;
+      const p=previewRef.current;
       applyPreview(null);
+      if(dr.heldFromPoke){
+        if(e.type==="pointerup"&&p&&!p.poke&&onPlaceHeldPoke)onPlaceHeldPoke(p.floorId,p.slot,p.gv);
+        dragRef.current=null;
+        return;
+      }
       if(e.type==="pointerup"&&p&&p.poke&&onPokeBox){
         onPokeBox(dr.box,dr.fromFloorId);
         dragRef.current=null;
@@ -306,8 +346,8 @@ export default function FloorRow({floor,mascot,products,onClickBox,onUpdateFloor
         onDragOver:e=>{e.preventDefault();e.dataTransfer.dropEffect="move";setDragOverSlot(slotIdx);},
         onDragLeave:e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOverSlot(-1);},
         onDrop:e=>{e.preventDefault();e.stopPropagation();dropOnSlot(slotIdx);},
-        style:{flexShrink:0,width:SLOT_W,height:group?(CARD_H+(Math.max(rowsN,1)-1)*PEEK):SLOT_H,minHeight:SLOT_H,border:isOver?"2px dashed #1dd1a1":(group?"none":"1px dashed rgba(255,255,255,0.07)"),borderRadius:12,background:isOver?"rgba(29,209,161,0.06)":"transparent",position:"relative",transition:"border-color 0.15s, background 0.15s"}
-      },
+        onClick:()=>{if(heldPoke&&onPlaceHeldPoke)onPlaceHeldPoke(floor.id,slotIdx,null);},
+        style:{flexShrink:0,width:SLOT_W,height:group?(CARD_H+(Math.max(rowsN,1)-1)*PEEK):SLOT_H,minHeight:SLOT_H,border:isOver?"2px dashed #1dd1a1":(group?"none":"1px dashed rgba(255,255,255,0.07)"),borderRadius:12,background:isOver?"rgba(29,209,161,0.06)":"transparent",position:"relative",transition:"border-color 0.15s, background 0.15s",cursor:heldPoke?"pointer":undefined}      },
         group&&React.createElement(StackColumn,{group,mascot,products,onClickBox:safeClick,dragRef,draggingId,setDraggingId,floorId:floor.id,canMove,scrollRef,previewGv,profile,onReturnPoke,onDropOnStack:(targetBoxId,fid2,touchSlotIdx)=>dropOnSlot(touchSlotIdx!=null?touchSlotIdx:slotIdx)}),
         !group&&isOver&&React.createElement("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#1dd1a1",fontWeight:600}},"Soltar aqui")
       );
