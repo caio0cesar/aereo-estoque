@@ -40,7 +40,7 @@ function SectorModal({sector,onSave,onClose}){
 }
 
 // --- BayScreen ---
-export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdateBay,onUpdateBayStructure,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,heldPoke,onPickPoke,onCancelHeldPoke,onPlaceHeldPoke,onClearPoke}){
   const [modal,setModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
   const [showPoke,setShowPoke]=useState(false);
@@ -69,6 +69,19 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
   }
   function handleReturnPoke(box){
     setConfirmReturn(box);
+  }
+  function doReturnPoke(){
+    if(confirmReturn) onClearPoke(confirmReturn.id);
+    setConfirmReturn(null);
+  }
+  function findMyPoke(){
+    const list=[];
+    (corridors||[]).forEach(cor=>(cor.bays||[]).forEach(b=>(b.floors||[]).forEach(fl=>fl.boxes.forEach(box=>{
+      if(box.pokeById===profile.id) list.push({box,fl,bay:b,cor});
+    }))));
+    return list;
+  }
+  const pokedList=isOperator(profile)?findMyPoke():[];
   }
   function doReturnPoke(){
     const box=confirmReturn; if(!box) return;
@@ -113,6 +126,10 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
       React.createElement(Tag,null,totalBoxes+" cx."),
       onHome&&React.createElement("button",{onClick:onHome,title:"Início",style:{background:"none",border:"none",color:C.muted,fontSize:18,padding:"0 0 0 4px"}},"🏠")
     ),
+    heldPoke&&React.createElement("div",{style:{margin:"0 12px 10px",background:"rgba(255,209,102,0.15)",border:"1px solid rgba(255,209,102,0.4)",borderRadius:10,padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
+      React.createElement("span",{style:{fontSize:12,color:"#ffd166",fontWeight:600}},"📥 Segurando "+heldPoke.box.sku+" — toque e arraste até o lugar"),
+      React.createElement("button",{onClick:onCancelHeldPoke,style:{background:"none",border:"1px solid rgba(255,209,102,0.4)",color:"#ffd166",borderRadius:7,padding:"3px 10px",fontSize:11}},"Cancelar")
+    ),
     React.createElement("div",{style:{padding:"12px 12px 80px"}},
       floors.map(floor=>React.createElement("div",{key:floor.id,style:{background:"rgba(0,0,0,0.25)",border:"1px solid "+C.border,borderRadius:12,padding:"10px 10px 4px",marginBottom:10}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
@@ -122,7 +139,7 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
             isEndministrator(profile)&&React.createElement("button",{onClick:()=>{if(floor.boxes.length>0){alert("Remova as caixas antes.");return;}const fid=floor.id;updateBayFloors(bay.floors.filter(f=>f.id!==fid));onRegisterUndo("Andar excluído",()=>db.deleteFloor(fid));},style:{background:"none",border:"1px solid "+C.border,color:C.dim,borderRadius:7,padding:"2px 8px",fontSize:12}},"✕")
           )
         ),
-        React.createElement(FloorRow,{floor,mascot:corridor.mascot||"📦",products,onClickBox:box=>setDetailModal({box,floorId:floor.id,floorNumber:floor.number}),onUpdateFloor:handleFloorUpdate,dragRef,draggingId,setDraggingId,canMove:isOperator(profile),onFixSlot:handleFixSlot,onPokeBox:handlePoke,onReturnPoke:handleReturnPoke,profile})
+        React.createElement(FloorRow,{floor,mascot:corridor.mascot||"📦",products,onClickBox:box=>setDetailModal({box,floorId:floor.id,floorNumber:floor.number}),onUpdateFloor:handleFloorUpdate,dragRef,draggingId,setDraggingId,canMove:isOperator(profile),onFixSlot:handleFixSlot,onPokeBox:handlePoke,onReturnPoke:handleReturnPoke,profile,heldPoke,onPlaceHeldPoke:(floorId,slotIdx,gv)=>onPlaceHeldPoke(corridor.id,floorId,slotIdx,gv)})
       )),
       isEndministrator(profile)&&React.createElement("button",{onClick:()=>{const nf=renumberFloors([...bay.floors,{id:genId(),number:999,boxes:[]}]);onUpdateBayStructure({...bay,floors:nf});},style:{background:"none",border:"1px dashed "+C.border,color:C.muted,borderRadius:12,padding:11,width:"100%",fontSize:13,marginTop:4}},"+ Adicionar Andar")
     ),
@@ -141,9 +158,12 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
       pokedList.map((item,i)=>React.createElement("div",{key:i,style:{background:"rgba(255,209,102,0.08)",border:"1px solid rgba(255,209,102,0.3)",borderRadius:10,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
         React.createElement("div",null,
           React.createElement("div",{style:{fontWeight:700,fontSize:13,color:C.text}},item.box.sku),
-          React.createElement("div",{style:{fontSize:11,color:C.muted}},"Andar "+item.fl.number+" · Qtd: "+item.box.qty)
+          React.createElement("div",{style:{fontSize:11,color:C.muted}},"C"+item.cor.number+" · Bay "+item.bay.number+" · Andar "+item.fl.number+" · Qtd: "+item.box.qty)
         ),
-        React.createElement("button",{onClick:()=>{setShowPoke(false);handleReturnPoke(item.box);},style:{background:"rgba(29,209,161,0.12)",border:"1px solid rgba(29,209,161,0.3)",color:C.accent,borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700,flexShrink:0}},"🔙 Devolver")
+        React.createElement("div",{style:{display:"flex",gap:6,flexShrink:0}},
+          React.createElement("button",{onClick:()=>{setShowPoke(false);onPickPoke(item.box,item.fl.id,item.cor.id);},style:{background:"rgba(255,209,102,0.15)",border:"1px solid rgba(255,209,102,0.4)",color:"#ffd166",borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700}},"🤚 Pegar"),
+          React.createElement("button",{onClick:()=>{setShowPoke(false);handleReturnPoke(item.box);},style:{background:"rgba(29,209,161,0.12)",border:"1px solid rgba(29,209,161,0.3)",color:C.accent,borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700}},"🔙 Devolver")
+        )
       ))
     ),
     confirmReturn&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.87)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:20}},
@@ -169,14 +189,14 @@ export function BayScreen({bay,corridor,products,corridors,onBack,onHome,onUpdat
 }
 
 // --- CorridorScreen ---
-export function CorridorScreen({corridor,products,corridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function CorridorScreen({corridor,products,corridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,heldPoke,onPickPoke,onCancelHeldPoke,onPlaceHeldPoke,onClearPoke}){
   const [selectedBay,setSelectedBay]=useState(highlightBayId||null);
   const [bayModal,setBayModal]=useState(null);
 
   if(selectedBay){
     const bay=corridor.bays.find(b=>b.id===selectedBay);
     if(!bay){setSelectedBay(null);return null;}
-    return React.createElement(BayScreen,{bay,corridor,products,corridors,onBack:()=>setSelectedBay(null),onHome,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,
+    return React.createElement(BayScreen,{bay,corridor,products,corridors,onBack:()=>setSelectedBay(null),onHome,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,heldPoke,onPickPoke,onCancelHeldPoke,onPlaceHeldPoke,onClearPoke,
       onUpdateBay:updated=>onSyncBoxes({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)}),
       onUpdateBayStructure:updated=>onUpdateCorridor({...corridor,bays:corridor.bays.map(b=>b.id===updated.id?updated:b)})});
   }
@@ -240,14 +260,14 @@ export function CorridorScreen({corridor,products,corridors,onBack,onHome,onUpda
 }
 
 // --- SectorScreen ---
-export function SectorScreen({sector,corridors,products,allCorridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile}){
+export function SectorScreen({sector,corridors,products,allCorridors,onBack,onHome,onUpdateCorridor,onSyncBoxes,onAddCorridor,onDeleteCorridor,highlightCorridorId,highlightBayId,highlightBoxId,onConfirmDelete,onRegisterUndo,profile,heldPoke,onPickPoke,onCancelHeldPoke,onPlaceHeldPoke,onClearPoke}){
   const [selectedCorridorId,setSelectedCorridorId]=useState(highlightCorridorId||null);
   const [corridorModal,setCorridorModal]=useState(null);
 
   if(selectedCorridorId){
     const cor=corridors.find(c=>c.id===selectedCorridorId);
     if(!cor){setSelectedCorridorId(null);return null;}
-    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),onHome,highlightBayId,highlightBoxId,onUpdateCorridor,onSyncBoxes,onConfirmDelete,onRegisterUndo,profile});
+    return React.createElement(CorridorScreen,{corridor:cor,products,corridors:allCorridors,onBack:()=>setSelectedCorridorId(null),onHome,highlightBayId,highlightBoxId,onUpdateCorridor,onSyncBoxes,onConfirmDelete,onRegisterUndo,profile,heldPoke,onPickPoke,onCancelHeldPoke,onPlaceHeldPoke,onClearPoke});
   }
 
   function handleCorridorSave(number){
