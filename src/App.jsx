@@ -32,11 +32,11 @@ export default function App(){
   const [undoState,setUndoState]=useState(null);
   const undoTimerRef=useRef(null);
   const dataRef=useRef(null);
-  const [session,setSession]=(undefined); // undefined = verificando sessão
-  const [profile,setProfile]=(null);
-  const [passwordRecovery,setPasswordRecovery]=(false);
-  const [loadingData,setLoadingData]=(false);
-  const [heldPoke,setHeldPoke]=(null);
+  const [session,setSession]=useState(undefined); // undefined = verificando sessão
+  const [profile,setProfile]=useState(null);
+  const [passwordRecovery,setPasswordRecovery]=useState(false);
+  const [loadingData,setLoadingData]=useState(false);
+  const [heldPoke,setHeldPoke]=useState(null);
   
   async function initData(){
     setLoadingData(true);
